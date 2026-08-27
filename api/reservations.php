@@ -249,8 +249,12 @@ function sendWhatsAppReservation($reservation, $isUpdate = false) {
         $settings = json_decode(file_get_contents($settingsFile), true);
     }
     
-    $yourWhatsAppNumber = $settings['whatsapp'] ?? '254734639203';
-    $apiKey = $settings['whatsapp_api_key'] ?? '3219514';
+    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
+    $apiKey = $settings['whatsapp_api_key'] ?? '';
+    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
+        error_log('WhatsApp notification skipped: not configured');
+        return false;
+    }
     
     $submissionTime = date('h:i A');
     $submissionDate = date('l, F j, Y');
