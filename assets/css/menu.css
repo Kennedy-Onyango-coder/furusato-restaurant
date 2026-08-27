@@ -1,0 +1,1001 @@
+/* ============================================================
+   Furusato Japanese Restaurant - Menu Page Stylesheet
+   Modern Version - All Categories Visible & Enhanced Styling
+   Brand Colors:
+     Deep Navy:   #0D1B2A
+     Crimson Red: #C0392B
+     Warm Gold:   #D4AF7A
+     Soft White:  #F9F6F0
+     Charcoal:    #2C2C2C
+     Teal Accent: #2A7D9E
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   CSS Custom Properties
+   ---------------------------------------------------------- */
+:root {
+  --menu-navy: #0d1b2a;
+  --menu-crimson: #c0392b;
+  --menu-gold: #d4af7a;
+  --menu-gold-light: #e8c99b;
+  --menu-gold-dark: #b8944f;
+  --menu-white: #f9f6f0;
+  --menu-charcoal: #2c2c2c;
+  --menu-teal: #2a7d9e;
+  --menu-shadow: rgba(13, 27, 42, 0.12);
+  --menu-shadow-hover: rgba(13, 27, 42, 0.22);
+  --menu-radius: 16px;
+  --menu-transition: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --navbar-height: 80px;
+}
+
+/* ----------------------------------------------------------
+   Keyframe Animations
+   ---------------------------------------------------------- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInNav {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInWidth {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0.4), 0 4px 16px var(--menu-shadow);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(212, 175, 122, 0), 0 4px 16px var(--menu-shadow);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0), 0 4px 16px var(--menu-shadow);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ----------------------------------------------------------
+   Menu Hero Section
+   ---------------------------------------------------------- */
+.menu-hero {
+  position: relative;
+  height: 50vh;
+  min-height: 320px;
+  max-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--menu-navy);
+}
+
+.menu-hero__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(1.05); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.menu-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(13, 27, 42, 0.85) 0%,
+    rgba(13, 27, 42, 0.75) 100%
+  );
+  z-index: 2;
+}
+
+.menu-hero__content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  color: var(--menu-white);
+  padding: 0 24px;
+  animation: fadeInUp 0.8s ease;
+}
+
+.menu-hero__title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  color: var(--menu-white);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.menu-hero__subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 300;
+  color: var(--menu-gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ----------------------------------------------------------
+   MODERN STICKY CATEGORY NAVIGATION - All Categories Visible
+   ---------------------------------------------------------- */
+.menu-category-nav {
+  position: sticky;
+  top: var(--navbar-height, 80px);
+  z-index: 98;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(212, 175, 122, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--menu-gold) rgba(212, 175, 122, 0.2);
+}
+
+/* Custom scrollbar styling */
+.menu-category-nav::-webkit-scrollbar {
+  height: 4px;
+}
+
+.menu-category-nav::-webkit-scrollbar-track {
+  background: rgba(212, 175, 122, 0.1);
+  border-radius: 10px;
+}
+
+.menu-category-nav::-webkit-scrollbar-thumb {
+  background: var(--menu-gold);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.menu-category-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--menu-gold-dark);
+}
+
+.menu-category-nav__inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Modern Category Links */
+.menu-category-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  white-space: nowrap;
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--menu-charcoal);
+  background: transparent;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Modern hover effect */
+.menu-category-nav__link:hover {
+  color: var(--menu-gold);
+  background: rgba(212, 175, 122, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Active category styling */
+.menu-category-nav__link.active {
+  color: var(--menu-gold);
+  background: rgba(212, 175, 122, 0.15);
+  box-shadow: 0 2px 8px rgba(212, 175, 122, 0.2);
+}
+
+/* Add icon before active category */
+.menu-category-nav__link.active::before {
+  content: "✦";
+  font-size: 0.7rem;
+  opacity: 1;
+}
+
+/* Animation for nav links */
+.menu-category-nav__link {
+  animation: fadeInNav 0.4s ease backwards;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .menu-category-nav__inner {
+    padding: 10px 20px;
+    gap: 2px;
+  }
+  .menu-category-nav__link {
+    padding: 8px 14px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .menu-category-nav {
+    top: 68px;
+  }
+  .menu-category-nav__inner {
+    padding: 8px 16px;
+  }
+  .menu-category-nav__link {
+    padding: 8px 12px;
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-category-nav {
+    top: 60px;
+  }
+  .menu-category-nav__inner {
+    padding: 8px 12px;
+  }
+  .menu-category-nav__link {
+    padding: 6px 10px;
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-category-nav {
+    top: 56px;
+  }
+  .menu-category-nav__inner {
+    padding: 6px 10px;
+  }
+  .menu-category-nav__link {
+    padding: 5px 8px;
+    font-size: 0.55rem;
+    gap: 4px;
+  }
+}
+
+/* ----------------------------------------------------------
+   Menu Search Bar - Modern
+   ---------------------------------------------------------- */
+.menu-search {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 32px auto 40px;
+  padding: 0 20px;
+}
+
+.menu-search__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.menu-search__icon {
+  position: absolute;
+  left: 18px;
+  width: 20px;
+  height: 20px;
+  color: var(--menu-gold);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.menu-search__input {
+  width: 100%;
+  padding: 16px 50px 16px 50px;
+  font-size: 1rem;
+  font-family: "Inter", sans-serif;
+  color: var(--menu-charcoal);
+  background: var(--menu-white);
+  border: 2px solid rgba(212, 175, 122, 0.3);
+  border-radius: 60px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.menu-search__input::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+.menu-search__input:focus {
+  border-color: var(--menu-gold);
+  box-shadow: 0 4px 20px rgba(212, 175, 122, 0.2);
+  transform: translateY(-1px);
+}
+
+.menu-search__clear {
+  position: absolute;
+  right: 16px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: var(--menu-gold);
+  color: var(--menu-white);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.menu-search__clear:hover {
+  background: var(--menu-gold-dark);
+  transform: scale(1.1);
+}
+
+.menu-search__clear--visible {
+  display: flex;
+}
+
+/* ----------------------------------------------------------
+   Menu Category Sections - Modern Cards
+   ---------------------------------------------------------- */
+.menu-category {
+  padding: 48px 0 32px;
+  scroll-margin-top: 100px;
+}
+
+.menu-category__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--menu-gold);
+}
+
+.menu-category__name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 700;
+  color: var(--menu-navy);
+  margin: 0;
+  line-height: 1.2;
+  position: relative;
+  display: inline-block;
+}
+
+.menu-category__name::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: var(--menu-gold);
+  border-radius: 2px;
+}
+
+.menu-category__subtitle {
+  font-size: 0.85rem;
+  color: var(--menu-gold-dark);
+  letter-spacing: 0.08em;
+  font-weight: 400;
+  font-family: "Inter", sans-serif;
+}
+
+/* ----------------------------------------------------------
+   Subcategory Headings - Modern
+   ---------------------------------------------------------- */
+.menu-subcategory {
+  margin: 32px 0 20px;
+  padding-left: 16px;
+  border-left: 4px solid var(--menu-gold);
+}
+
+.menu-subcategory__name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--menu-navy);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.menu-subcategory__subtitle {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 4px;
+  font-style: italic;
+  font-family: "Inter", sans-serif;
+}
+
+/* ----------------------------------------------------------
+   Modern Item Cards Grid
+   ---------------------------------------------------------- */
+.menu-items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  padding: 0 20px;
+}
+
+@media (max-width: 1024px) {
+  .menu-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .menu-items-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ----------------------------------------------------------
+   Modern Individual Item Card
+   ---------------------------------------------------------- */
+.menu-item-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  border: 1px solid rgba(212, 175, 122, 0.1);
+}
+
+.menu-item-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: rgba(212, 175, 122, 0.3);
+}
+
+/* Image Wrapper - Modern */
+.menu-item-card__image-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f5f0e8 0%, #e8e3dc 100%);
+  flex-shrink: 0;
+}
+
+.menu-item-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: block;
+}
+
+.menu-item-card:hover .menu-item-card__image {
+  transform: scale(1.08);
+}
+
+/* Modern Badges */
+.menu-item-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, var(--menu-gold), var(--menu-gold-dark));
+  color: var(--menu-navy);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 30px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  z-index: 4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
+}
+
+/* Content Panel */
+.menu-item-card__content {
+  padding: 20px 20px 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  background: #ffffff;
+}
+
+.menu-item-card__name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--menu-navy);
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.menu-item-card__description {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.3s ease;
+  font-family: "Inter", sans-serif;
+}
+
+.menu-item-card__description:hover {
+  color: var(--menu-charcoal);
+}
+
+/* Price Row */
+.menu-item-card__price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.menu-item-card__price {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--menu-crimson);
+  white-space: nowrap;
+  font-family: "Inter", sans-serif;
+}
+
+.menu-item-card__price-original {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #999;
+  text-decoration: line-through;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Modern WhatsApp Button */
+.menu-item-card__whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #25d366, #1da851);
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-family: "Inter", sans-serif;
+}
+
+.menu-item-card__whatsapp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
+}
+
+.menu-item-card__whatsapp svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ----------------------------------------------------------
+   Special Items - Enhanced
+   ---------------------------------------------------------- */
+.menu-item-card--special {
+  border: 2px solid var(--menu-gold);
+  animation: pulseGlow 3s ease-in-out infinite;
+  position: relative;
+}
+
+.menu-item-card--special::before {
+  content: "✦ SPECIAL ✦";
+  position: absolute;
+  top: 20px;
+  left: -8px;
+  z-index: 5;
+  background: linear-gradient(135deg, var(--menu-crimson), #a93226);
+  color: var(--menu-white);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 5px 16px 5px 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
+  border-radius: 0 20px 20px 0;
+}
+
+.menu-item-card--special::after {
+  content: "";
+  position: absolute;
+  top: 48px;
+  left: -8px;
+  z-index: 5;
+  border: 6px solid transparent;
+  border-left-color: #8e2b20;
+  border-top-color: #8e2b20;
+}
+
+/* ----------------------------------------------------------
+   Back to Top Button - Modern
+   ---------------------------------------------------------- */
+.menu-back-to-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--menu-white);
+  color: var(--menu-gold);
+  border: 2px solid var(--menu-gold);
+  border-radius: 50%;
+  cursor: pointer;
+  margin: 32px auto 0;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.menu-back-to-top:hover {
+  background: var(--menu-gold);
+  color: var(--menu-white);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(212, 175, 122, 0.4);
+}
+
+.menu-back-to-top svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+
+/* ----------------------------------------------------------
+   Download PDF Button - Modern
+   ---------------------------------------------------------- */
+.menu-download-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--menu-navy);
+  background: linear-gradient(135deg, var(--menu-gold), var(--menu-gold-dark));
+  border: none;
+  border-radius: 60px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  font-family: "Inter", sans-serif;
+}
+
+.menu-download-pdf:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(212, 175, 122, 0.4);
+  background: linear-gradient(135deg, var(--menu-gold-dark), var(--menu-gold));
+}
+
+.menu-download-pdf svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.menu-download-pdf__wrap {
+  text-align: center;
+  padding: 40px 20px 60px;
+}
+
+/* ----------------------------------------------------------
+   Loading Skeleton
+   ---------------------------------------------------------- */
+.menu-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  padding: 0 20px;
+}
+
+@media (max-width: 1024px) {
+  .menu-skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .menu-skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.menu-skeleton-card {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.menu-skeleton-card__image {
+  aspect-ratio: 3 / 2;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f0ece4 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.menu-skeleton-card__content {
+  padding: 20px;
+}
+
+.menu-skeleton-card__line {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f0ece4 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  margin-bottom: 12px;
+}
+
+.menu-skeleton-card__line--title {
+  width: 65%;
+  height: 20px;
+}
+
+.menu-skeleton-card__line--text {
+  width: 100%;
+}
+
+.menu-skeleton-card__line--text-short {
+  width: 80%;
+}
+
+.menu-skeleton-card__line--price {
+  width: 35%;
+  height: 18px;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* ----------------------------------------------------------
+   Search & Filter Effects
+   ---------------------------------------------------------- */
+.menu-item-card.search-hidden {
+  opacity: 0.3;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.menu-item-card.search-match {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ----------------------------------------------------------
+   No Results State - Modern
+   ---------------------------------------------------------- */
+.menu-no-results {
+  text-align: center;
+  padding: 80px 20px;
+  background: #ffffff;
+  border-radius: 24px;
+  margin: 40px 20px;
+}
+
+.menu-no-results__icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  color: var(--menu-gold);
+}
+
+.menu-no-results__text {
+  font-size: 1.2rem;
+  font-family: "Cormorant Garamond", serif;
+  color: var(--menu-charcoal);
+}
+
+.menu-retry-btn {
+  margin-top: 24px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--menu-crimson), #a93226);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: "Inter", sans-serif;
+}
+
+.menu-retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(192, 57, 43, 0.3);
+}
+
+/* ----------------------------------------------------------
+   Utilities
+   ---------------------------------------------------------- */
+.menu-section-divider {
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--menu-gold), transparent);
+  border: none;
+  margin: 0 auto 48px;
+  border-radius: 2px;
+}
+
+/* ----------------------------------------------------------
+   Responsive Adjustments
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .menu-category {
+    padding: 32px 0 24px;
+    scroll-margin-top: 80px;
+  }
+
+  .menu-category__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .menu-category__name::after {
+    bottom: -12px;
+  }
+
+  .menu-item-card__price-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .menu-item-card__whatsapp {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .menu-item-card__image-wrap {
+    height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-hero {
+    min-height: 260px;
+  }
+
+  .menu-item-card__content {
+    padding: 16px;
+  }
+
+  .menu-item-card__name {
+    font-size: 1.15rem;
+  }
+  
+  .menu-item-card__image-wrap {
+    height: 180px;
+  }
+}
+
+/* ----------------------------------------------------------
+   Print Styles
+   ---------------------------------------------------------- */
+@media print {
+  .menu-hero,
+  .menu-category-nav,
+  .menu-search,
+  .menu-back-to-top,
+  .menu-download-pdf__wrap,
+  .menu-item-card__whatsapp {
+    display: none !important;
+  }
+
+  .menu-item-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+}
+
+/* ----------------------------------------------------------
+   Reduced Motion
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .menu-item-card,
+  .menu-item-card__image,
+  .menu-category-nav__link,
+  .menu-back-to-top,
+  .menu-download-pdf {
+    transition: none;
+    animation: none;
+  }
+
+  .menu-item-card--special {
+    animation: none;
+  }
+}
+
+/* ----------------------------------------------------------
+   Touch Device Optimizations
+   ---------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  .menu-category-nav__link:active {
+    background: rgba(212, 175, 122, 0.15);
+    transform: scale(0.96);
+  }
+  
+  .menu-item-card:active {
+    transform: scale(0.98);
+  }
+}

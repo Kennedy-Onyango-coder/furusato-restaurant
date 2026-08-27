@@ -1,0 +1,29 @@
+{
+  "name": "Furusato Japanese Restaurant",
+  "short_name": "Furusato",
+  "description": "Authentic Japanese cuisine in Nairobi. Sushi, ramen, teppanyaki since 2001.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0d1b2a",
+  "background_color": "#0d1b2a",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/assets/images/furusato-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/furusato-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/images/furusato-logo.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+﻿# Sensitive & runtime data - never commit real customer/admin data
+data/admin.json
+data/reservations.json
+data/audit.json
+data/audit.log
+data/email_log.json
+data/login_rate_limits.json
+data/rate_limits*.json
+data/attempts.json
+data/processed_ids.json
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/

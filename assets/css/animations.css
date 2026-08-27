@@ -1,0 +1,924 @@
+/* ============================================================
+   Furusato Japanese Restaurant - Optimized Animation Keyframes
+   Enhanced for Hero Section & Performance
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Hero Section & Ken Burns Effects (Optimized)
+   ---------------------------------------------------------- */
+@keyframes kenBurnsZoom {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes kenBurnsZoomReverse {
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Hero Content Entrance Animations */
+@keyframes fadeInUpSlide {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ----------------------------------------------------------
+   Base Fade Animations
+   ---------------------------------------------------------- */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ----------------------------------------------------------
+   Slide Animations
+   ---------------------------------------------------------- */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+  100% {
+    max-height: 600px;
+    opacity: 1;
+    overflow: visible;
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    max-height: 600px;
+    opacity: 1;
+    overflow: visible;
+  }
+  100% {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+/* ----------------------------------------------------------
+   Float & Bounce Animations
+   ---------------------------------------------------------- */
+@keyframes float {
+  0% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-14px);
+  }
+  60% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes bounceSoft {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* ----------------------------------------------------------
+   Pulse & Glow Effects
+   ---------------------------------------------------------- */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseSoft {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(212, 175, 122, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0);
+  }
+}
+
+@keyframes whatsappPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+@keyframes borderPulse {
+  0% {
+    border-color: #d4af7a;
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0.4);
+  }
+  50% {
+    border-color: #e8c99b;
+    box-shadow: 0 0 12px 4px rgba(212, 175, 122, 0.25);
+  }
+  100% {
+    border-color: #d4af7a;
+    box-shadow: 0 0 0 0 rgba(212, 175, 122, 0.4);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes videoPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.3);
+  }
+}
+
+/* ----------------------------------------------------------
+   Marquee / Scrolling Animations
+   ---------------------------------------------------------- */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marqueeSlow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes reviewScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ----------------------------------------------------------
+   Loading & Shimmer Effects
+   ---------------------------------------------------------- */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes shimmerLight {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes imageReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ----------------------------------------------------------
+   Modal & Toast Animations
+   ---------------------------------------------------------- */
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+}
+
+@keyframes toastSlideIn {
+  0% {
+    transform: translateX(100%) translateY(0);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-8px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ----------------------------------------------------------
+   Count Up Animation
+   ---------------------------------------------------------- */
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ----------------------------------------------------------
+   Ripple Effect for Buttons
+   ---------------------------------------------------------- */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ----------------------------------------------------------
+   Success Pop Animation
+   ---------------------------------------------------------- */
+@keyframes successPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Animation Utility Classes
+   ============================================================ */
+
+/* Hero Specific Animations */
+.animate-fadeInUpSlide {
+  animation: fadeInUpSlide 1s ease-out;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.8s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.8s ease-out;
+}
+
+.animate-kenBurnsZoom {
+  animation: kenBurnsZoom 20s ease-in-out infinite alternate;
+}
+
+.animate-kenBurnsZoomReverse {
+  animation: kenBurnsZoomReverse 20s ease-in-out infinite alternate;
+}
+
+/* Basic Animations */
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease both;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease both;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.6s ease both;
+}
+
+.animate-fadeInLeft {
+  animation: fadeInLeft 0.6s ease both;
+}
+
+.animate-fadeInRight {
+  animation: fadeInRight 0.6s ease both;
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.5s ease both;
+}
+
+/* Motion Animations */
+.animate-float {
+  animation: float 4s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animate-floatBounce {
+  animation: floatBounce 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-pulseSoft {
+  animation: pulseSoft 3s ease-in-out infinite;
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-whatsappPulse {
+  animation: whatsappPulse 2s infinite;
+}
+
+.animate-borderPulse {
+  animation: borderPulse 2s ease-in-out infinite;
+}
+
+.animate-dotPulse {
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.animate-videoPulse {
+  animation: videoPulse 1.5s ease-in-out infinite;
+}
+
+/* Slide Animations */
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease both;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.4s ease both;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.4s ease both;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.4s ease both;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.4s ease both;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease both;
+}
+
+/* Bounce Animations */
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-bounceSoft {
+  animation: bounceSoft 1.5s ease-in-out infinite;
+}
+
+/* Loading & Shimmer */
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #e8e8e8 25%, #f0ece4 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.animate-shimmerLight {
+  background: linear-gradient(90deg, #f5f5f5 25%, #ffffff 50%, #f5f5f5 75%);
+  background-size: 200% 100%;
+  animation: shimmerLight 1.5s ease-in-out infinite;
+}
+
+.animate-imageReveal {
+  animation: imageReveal 0.5s ease both;
+}
+
+/* Marquee Animations */
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marqueeSlow {
+  animation: marqueeSlow 40s linear infinite;
+}
+
+.animate-reviewScroll {
+  animation: reviewScroll 40s linear infinite;
+}
+
+/* Modal & Toast */
+.animate-modalFadeIn {
+  animation: modalFadeIn 0.3s ease both;
+}
+
+.animate-modalFadeOut {
+  animation: modalFadeOut 0.3s ease both;
+}
+
+.animate-toastIn {
+  animation: toastSlideIn 0.3s ease both;
+}
+
+.animate-toastOut {
+  animation: toastSlideOut 0.3s ease both;
+}
+
+/* Count Up */
+.animate-countUp {
+  animation: countUp 0.8s ease both;
+}
+
+/* Success Pop */
+.animate-successPop {
+  animation: successPop 0.5s ease both;
+}
+
+/* ============================================================
+   Scroll Reveal Base Classes
+   ============================================================ */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s var(--transition-smooth, ease), 
+              transform 0.7s var(--transition-smooth, ease);
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.7s var(--transition-smooth, ease), 
+              transform 0.7s var(--transition-smooth, ease);
+}
+
+.scroll-reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-right {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.7s var(--transition-smooth, ease), 
+              transform 0.7s var(--transition-smooth, ease);
+}
+
+.scroll-reveal-right.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scroll-reveal-scale {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.7s var(--transition-smooth, ease), 
+              transform 0.7s var(--transition-smooth, ease);
+}
+
+.scroll-reveal-scale.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ============================================================
+   Stagger Delay Utility Classes
+   Each increment adds 100ms of animation-delay
+   ============================================================ */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+.stagger-4 { animation-delay: 400ms; }
+.stagger-5 { animation-delay: 500ms; }
+.stagger-6 { animation-delay: 600ms; }
+.stagger-7 { animation-delay: 700ms; }
+.stagger-8 { animation-delay: 800ms; }
+.stagger-9 { animation-delay: 900ms; }
+.stagger-10 { animation-delay: 1000ms; }
+.stagger-11 { animation-delay: 1100ms; }
+.stagger-12 { animation-delay: 1200ms; }
+
+/* Transition Delays for smoother sequences */
+.transition-delay-1 { transition-delay: 100ms; }
+.transition-delay-2 { transition-delay: 200ms; }
+.transition-delay-3 { transition-delay: 300ms; }
+.transition-delay-4 { transition-delay: 400ms; }
+.transition-delay-5 { transition-delay: 500ms; }
+
+/* ============================================================
+   Hover Animation Utilities
+   ============================================================ */
+.hover-lift {
+  transition: transform 0.3s var(--transition-smooth, ease), 
+              box-shadow 0.3s var(--transition-smooth, ease);
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.hover-scale {
+  transition: transform 0.3s var(--transition-smooth, ease);
+}
+
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s var(--transition-smooth, ease);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(212, 175, 122, 0.4);
+}
+
+.hover-rotate {
+  transition: transform 0.3s var(--transition-smooth, ease);
+}
+
+.hover-rotate:hover {
+  transform: rotate(5deg);
+}
+
+/* ============================================================
+   Reduced Motion Support (Accessibility)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable all complex animations */
+  .animate-kenBurnsZoom,
+  .animate-kenBurnsZoomReverse,
+  .animate-float,
+  .animate-floatBounce,
+  .animate-marquee,
+  .animate-marqueeSlow,
+  .animate-reviewScroll {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Reset scroll reveal */
+  .scroll-reveal,
+  .scroll-reveal-left,
+  .scroll-reveal-right,
+  .scroll-reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Disable hover animations */
+  .hover-lift:hover,
+  .hover-scale:hover,
+  .hover-rotate:hover {
+    transform: none !important;
+  }
+
+  /* Disable pulse animations */
+  .animate-pulse,
+  .animate-pulseSoft,
+  .animate-pulseGlow,
+  .animate-whatsappPulse {
+    animation: none !important;
+  }
+
+  /* Keep simple fade animations but faster */
+  .animate-fadeIn,
+  .animate-fadeInUp,
+  .animate-fadeInDown {
+    animation-duration: 0.2s !important;
+  }
+}
+
+/* ============================================================
+   Print Styles - Disable all animations
+   ============================================================ */
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .scroll-reveal,
+  .scroll-reveal-left,
+  .scroll-reveal-right,
+  .scroll-reveal-scale {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .hero-slide-image {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Performance Optimizations
+   ============================================================ */
+/* Use will-change for elements that animate frequently */
+.hero-slide-image,
+.animate-float,
+.animate-floatBounce,
+.whatsapp-float {
+  will-change: transform;
+}
+
+/* Limit GPU memory usage - only animate transforms and opacity */
+.hero-slide,
+.dish-card,
+.btn,
+.navbar {
+  will-change: auto;
+}
+
+/* Optimize animation performance on mobile */
+@media (max-width: 768px) {
+  .animate-kenBurnsZoom,
+  .animate-kenBurnsZoomReverse {
+    animation-duration: 15s;
+  }
+}
+
+/* ============================================================
+   Safari-Specific Fixes
+   ============================================================ */
+@supports (backdrop-filter: blur(8px)) {
+  .hero-arrow,
+  .hero-content .section-label {
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Firefox-specific optimizations */
+@-moz-document url-prefix() {
+  .hero-slide-image {
+    transform: translateZ(0);
+  }
+}

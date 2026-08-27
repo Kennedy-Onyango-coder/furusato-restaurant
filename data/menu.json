@@ -1,0 +1,1618 @@
+{
+    "lastUpdated": "2026-06-04T16:15:54+00:00",
+    "categories": [
+        {
+            "id": "cat-001",
+            "slug": "new-special-menu",
+            "label": "New Special Menu",
+            "labelJp": "新しいスペシャルメニュー",
+            "icon": "⭐",
+            "visible": true,
+            "order": 1,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "item-6a18402393c6a",
+                    "name": "Sashimi &amp;amp; Sushi Platter for 2 Persons",
+                    "description": "9 Pcs Tuna, 9 Pcs Salmon, 6 Pcs Red Snapper, 3 Pcs Octopus, 3 Pcs Squid, 3 Pcs Prawn Sashimi &amp;amp; 3 Pcs Tuna, 3 Pcs Salmon, 2 Pcs Red Snapper, 2 Pcs Octopus, 2 Pcs Prawn Sushi",
+                    "price": 5950,
+                    "image": "assets\/images\/menu\/6a1840239386b.webp",
+                    "badge": "Popular",
+                    "visible": true,
+                    "order": 1
+                },
+                {
+                    "id": "item-6a184989e421c",
+                    "name": "SYO Platter for 2 (Sashimi, Sushi & Maki)",
+                    "description": "6 Pcs Tuna, 6 Pcs Salmon, 6 Pcs Red Snapper, 3 Pcs Octopus, 3 Pcs Kani, 3 Pcs Prawn Sashimi & 2 Pc Tuna, 2 Pc Salmon, 2 Pc Red Snapper, 2 Pc Prawn, 2 Pc Tamago Sushi & 4 Pcs Double Crunch Rolls, 4 Pcs Futomaki Rolls",
+                    "price": 6450,
+                    "image": "assets\/images\/menu\/6a184989e4019.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 2
+                },
+                {
+                    "id": "sp-03",
+                    "name": "Tuna & Salmon Platter for 2",
+                    "price": 6250,
+                    "description": "9 Pcs Tuna Sashimi, 9 Pcs Salmon Sashimi & 6 Pcs Tuna Sushi, 6 Pcs Salmon Sushi & 8 Pcs Tuna Rolls, 8 Pcs Salmon Rolls",
+                    "image": "assets\/images\/menu\/tuna-salmon-platter-for-2_1779268279_6a0d7ab759c36.webp",
+                    "badge": "For 2 Persons",
+                    "visible": true,
+                    "order": 3
+                },
+                {
+                    "id": "sp-04",
+                    "name": "Vegetable Sushi Platter for 2",
+                    "price": 2750,
+                    "description": "8 Pcs Caterpillar Rolls, 4 Pcs Cucumber Rolls, 4 Pcs California Rolls, 4 Pcs Dynamite Rolls",
+                    "image": "assets\/images\/menu\/vegetable-sushi-platter-for-2_1779268334_6a0d7aee3e771.webp",
+                    "badge": "For 2 Persons",
+                    "visible": true,
+                    "order": 4
+                },
+                {
+                    "id": "sp-05",
+                    "name": "Salmon Sushi Sashimi & Maki (Salmon Only)",
+                    "price": 3950,
+                    "description": "9 Pcs Sashimi, 5 Pcs Sushi, 4 Pcs Maki",
+                    "image": "assets\/images\/menu\/salmon-sushi-sashimi-maki-salm_1779268363_6a0d7b0b67abb.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 5
+                },
+                {
+                    "id": "sp-07",
+                    "name": "Tuna Tataki Sushi (2 Pcs)",
+                    "price": 700,
+                    "description": "Torched Tuna Sushi",
+                    "image": "assets\/images\/menu\/6a15a63a2276d.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 6
+                },
+                {
+                    "id": "sp-08",
+                    "name": "Salmon Tataki Sushi (2 Pcs)",
+                    "price": 850,
+                    "description": "Torched Salmon Belly Sushi",
+                    "image": "assets\/images\/menu\/6a15a68faeaa5.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 7
+                },
+                {
+                    "id": "sp-13",
+                    "name": "Grilled Crispy Chicken",
+                    "price": 1600,
+                    "description": "Spicy grilled chicken marinated in curry",
+                    "image": "assets\/images\/menu\/grilled-crispy-chicken_1779268782_6a0d7cae4e49c.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 8
+                },
+                {
+                    "id": "sp-14",
+                    "name": "Chilli Prawns",
+                    "price": 2050,
+                    "description": "Pan fried fresh Prawns with sweet chili",
+                    "image": "assets\/images\/menu\/chilli-prawns_1779270535_6a0d838737c77.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 9
+                },
+                {
+                    "id": "sp-15",
+                    "name": "Katsu Curry (Chicken or Pork or Prawns)",
+                    "price": 1950,
+                    "description": "Deep fried breaded Chicken or Pork or Prawns on rice with curry sauce",
+                    "image": "assets\/images\/menu\/katsu-curry-chicken-or-pork-or_1779270568_6a0d83a81506c.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 10
+                }
+            ]
+        },
+        {
+            "id": "cat-002",
+            "slug": "starters",
+            "label": "Starters \/ Side Dishes",
+            "labelJp": "前菜・サイドディッシュ",
+            "icon": "🥟",
+            "visible": true,
+            "order": 2,
+            "subcategories": [
+                {
+                    "id": "sub-001",
+                    "label": "Salad Dish Starters",
+                    "visible": true,
+                    "order": 1,
+                    "items": []
+                }
+            ],
+            "items": [
+                {
+                    "id": "st-01",
+                    "name": "Gyoza",
+                    "price": 1200,
+                    "description": "Pan-fried dumplings (Pork or Vegetarian)",
+                    "image": "assets\/images\/menu\/gyoza_1779268098_6a0d7a02c0a24.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-02",
+                    "name": "Mixed Prawn Gyoza",
+                    "price": 1650,
+                    "description": "Pan-fried Prawn dumpling with Pork or Vegetable",
+                    "image": "assets\/images\/menu\/mixed-prawn-gyoza_1779272104_6a0d89a827c6b.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-03",
+                    "name": "Potato Pancake",
+                    "price": 1150,
+                    "description": "",
+                    "image": "assets\/images\/menu\/potato-pancake_1779272175_6a0d89efa085d.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-04",
+                    "name": "Tuna Avocado Soyuae",
+                    "price": 1050,
+                    "description": "Tuna and Avocado mixed with soy sauce",
+                    "image": "assets\/images\/menu\/tuna-avocado-soyuae_1779272244_6a0d8a34c72d7.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-05",
+                    "name": "Salmon Avocado Soyuae",
+                    "price": 1350,
+                    "description": "Salmon and Avocado mixed with soy sauce",
+                    "image": "assets\/images\/menu\/salmon-avocado-soyuae_1779272265_6a0d8a49ce820.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-06",
+                    "name": "Vinegared Dish Sunomono",
+                    "price": 1150,
+                    "description": "Vinegared cold dish with Prawn, Octopus, Egg, Seaweed",
+                    "image": "assets\/images\/menu\/vinegared-dish-sunomono_1779272290_6a0d8a62e09fe.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-07",
+                    "name": "Agedashi Tofu",
+                    "price": 800,
+                    "description": "Deep fried bean curd served with light soy sauce",
+                    "image": "assets\/images\/menu\/agedashi-tofu_1779272314_6a0d8a7ae94ee.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-08",
+                    "name": "Chicken Wings",
+                    "price": 1150,
+                    "description": "Deep fried chicken wings",
+                    "image": "assets\/images\/menu\/chicken-wings_1779272349_6a0d8a9db43df.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-09",
+                    "name": "Chicken Wings Teba Karage",
+                    "price": 1400,
+                    "description": "Pan fried chicken wings with sweet soy sauce",
+                    "image": "assets\/images\/menu\/chicken-wings-teba-karage_1779272375_6a0d8ab7c0959.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-10",
+                    "name": "Chicken Wings Lollipop",
+                    "price": 1300,
+                    "description": "Deep fried lollipop chicken wings",
+                    "image": "assets\/images\/menu\/chicken-wings-lollipop_1779272424_6a0d8ae801c8f.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-11",
+                    "name": "Chicken Wings Chilli Sauce",
+                    "price": 1350,
+                    "description": "Deep fried chicken wings with chilli garlic sauce",
+                    "image": "assets\/images\/menu\/chicken-wings-chilli-sauce_1779272466_6a0d8b12d8ba8.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-12",
+                    "name": "Spare Ribs Buta Abarakune",
+                    "price": 1350,
+                    "description": "Boiled Pork Spare Ribs with sauce",
+                    "image": "assets\/images\/menu\/spare-ribs-buta-abarakune_1779273716_6a0d8ff41a86a.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-13",
+                    "name": "Mixed Kebabs Yakitori",
+                    "price": 1250,
+                    "description": "Mixed kebabs with teriyaki sauce on skewer",
+                    "image": "assets\/images\/menu\/mixed-kebabs-yakitori_1779273893_6a0d90a5e316b.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-14",
+                    "name": "Salmon Jaw",
+                    "price": 1600,
+                    "description": "Grilled Salmon Jaw with Teriyaki sauce",
+                    "image": "assets\/images\/menu\/salmon-jaw_1779273912_6a0d90b88d9fd.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-15",
+                    "name": "Grilled Squid Ika Shoyaki",
+                    "price": 1650,
+                    "description": "Grilled squid Salt or Teriyaki sauce",
+                    "image": "assets\/images\/menu\/grilled-squid-ika-shoyaki_1779273933_6a0d90cd6bd75.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-16",
+                    "name": "Fried Squid Ika Furai",
+                    "price": 1650,
+                    "description": "Bread crumbed deep fried squids",
+                    "image": "assets\/images\/menu\/fried-squid-ika-furai_1779273951_6a0d90df605f9.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-19",
+                    "name": "Tako Kimchi",
+                    "price": 1050,
+                    "description": "Sliced Octopus with kimchi",
+                    "image": "assets\/images\/menu\/tako-kimchi_1779274223_6a0d91ef025ab.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-20",
+                    "name": "Grilled Corn",
+                    "price": 950,
+                    "description": "Grilled Corn with mayonnaise and vegetable",
+                    "image": "assets\/images\/menu\/grilled-corn_1779274294_6a0d923605089.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-21",
+                    "name": "Nagisa",
+                    "price": 1550,
+                    "description": "Grilled red snapper with veg. and mayonnaise",
+                    "image": "assets\/images\/menu\/nagisa_1779274311_6a0d92471f64a.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "st-23",
+                    "name": "Seaweed Salad",
+                    "price": 1100,
+                    "description": "Fresh Japanese seaweed salad",
+                    "image": "assets\/images\/menu\/seaweed-salad_1779274343_6a0d9267e26f7.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "item-6a0d8a165f626",
+                    "name": "Tuna Pancake",
+                    "price": 1150,
+                    "description": "",
+                    "image": "assets\/images\/menu\/tuna-pancake_1779272214_6a0d8a1658af3.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 24
+                }
+            ]
+        },
+        {
+            "id": "cat-003",
+            "slug": "sashimi",
+            "label": "Sashimi Menu",
+            "labelJp": "刺身メニュー",
+            "icon": "🐟",
+            "visible": true,
+            "order": 3,
+            "subcategories": [
+                {
+                    "id": "sub-002",
+                    "label": "A La Carte Sashimi (9 Pcs)",
+                    "visible": true,
+                    "order": 1,
+                    "items": [
+                        {
+                            "id": "sas-ac-01",
+                            "name": "Norway Salmon",
+                            "price": 1950,
+                            "description": "9 pcs fresh Norway Salmon sashimi",
+                            "image": "assets\/images\/menu\/6a1595189759e.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sas-ac-04",
+                            "name": "Tobiko (Flying Fish Egg)",
+                            "price": 1250,
+                            "description": "9 pcs Flying Fish Egg sashimi",
+                            "image": "assets\/images\/menu\/tobiko-flying-fish-egg_1779346416_6a0eabf06b73f.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                }
+            ],
+            "items": [
+                {
+                    "id": "sas-01",
+                    "name": "Sashimi & Sushi Platter for 2",
+                    "price": 5950,
+                    "description": "Tuna, Salmon, Red Snapper, Prawn, Octopus Sashimi and Sushi",
+                    "image": "assets\/images\/menu\/sashimi-sushi-platter-for-2_1779346230_6a0eab3648db1.webp",
+                    "badge": "For 2 Persons",
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "sas-03",
+                    "name": "Sashimi Funamori Per Portion",
+                    "price": 2750,
+                    "description": "Chef's recommendation — Assorted raw fish served in traditional boat",
+                    "image": "assets\/images\/menu\/sashimi-funamori-per-portion_1779346320_6a0eab90bd239.webp",
+                    "badge": "Chef's Pick",
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-004",
+            "slug": "sushi",
+            "label": "Sushi Set Menu",
+            "labelJp": "寿司セットメニュー",
+            "icon": "🍱",
+            "visible": true,
+            "order": 4,
+            "subcategories": [
+                {
+                    "id": "sub-003",
+                    "label": "A La Carte Sushi (2 Pcs Per Portion)",
+                    "visible": true,
+                    "order": 1,
+                    "items": [
+                        {
+                            "id": "sus-ac-01",
+                            "name": "Tuna (Maguro)",
+                            "price": 600,
+                            "description": "2 pcs Tuna sushi",
+                            "image": "assets\/images\/menu\/tuna-maguro_1779346739_6a0ead33ac7bb.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-02",
+                            "name": "Salmon (Shake)",
+                            "price": 800,
+                            "description": "2 pcs Salmon sushi",
+                            "image": "assets\/images\/menu\/salmon-shake_1779346758_6a0ead4644cfe.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-03",
+                            "name": "Unagi (Eel Fish)",
+                            "price": 950,
+                            "description": "2 pcs Eel Fish sushi",
+                            "image": "assets\/images\/menu\/unagi-eel-fish_1779346782_6a0ead5e11a71.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-04",
+                            "name": "Prawn (Ebi)",
+                            "price": 650,
+                            "description": "2 pcs Prawn sushi",
+                            "image": "assets\/images\/menu\/prawn-ebi_1779346800_6a0ead704c869.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-05",
+                            "name": "Red Snapper (Tai)",
+                            "price": 600,
+                            "description": "2 pcs Red Snapper sushi",
+                            "image": "assets\/images\/menu\/red-snapper-tai_1779346820_6a0ead84456f8.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-06",
+                            "name": "Octopus (Tako)",
+                            "price": 700,
+                            "description": "2 pcs Octopus sushi",
+                            "image": "assets\/images\/menu\/octopus-tako_1779346903_6a0eadd73f3c0.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-08",
+                            "name": "Tobiko Flying Fish",
+                            "price": 800,
+                            "description": "2 pcs Flying Fish Egg sushi",
+                            "image": "assets\/images\/menu\/tobiko-flying-fish_1779346974_6a0eae1ec1e47.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-09",
+                            "name": "Squid (Ika)",
+                            "price": 700,
+                            "description": "2 pcs Squid sushi",
+                            "image": "assets\/images\/menu\/squid-ika_1779346995_6a0eae333b69b.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "sus-ac-10",
+                            "name": "Egg or Avocado",
+                            "price": 500,
+                            "description": "2 pcs Egg or Avocado sushi",
+                            "image": "assets\/images\/menu\/egg-or-avocado_1779347023_6a0eae4f3eed0.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                }
+            ],
+            "items": [
+                {
+                    "id": "sus-01",
+                    "name": "Furusato Sushi Set",
+                    "price": 2250,
+                    "description": "Chef's recommendation — Sushi 8 pcs and Special Roll 2 pcs",
+                    "image": "assets\/images\/menu\/furusato-sushi-set_1779346571_6a0eac8b38556.webp",
+                    "badge": "Chef's Pick",
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "sus-03",
+                    "name": "Sushi & Maki Sushi Set",
+                    "price": 2350,
+                    "description": "Tuna sushi, Salmon sushi, Tuna roll, Salmon roll, Special roll. Salmon Only Extra 600",
+                    "image": "assets\/images\/menu\/sushi-maki-sushi-set_1779346617_6a0eacb9b12a3.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "sus-04",
+                    "name": "Tuna & Salmon Sushi Set",
+                    "price": 2450,
+                    "description": "Tuna sushi, Salmon sushi, Special roll 2 pcs. Salmon Only Extra 600",
+                    "image": "assets\/images\/menu\/tuna-salmon-sushi-set_1779346658_6a0eace2df5d0.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "sus-05",
+                    "name": "Vegetarian Sushi Set",
+                    "price": 1550,
+                    "description": "California, Cucumber, Avocado rolls",
+                    "image": "assets\/images\/menu\/6a15a7f0c4802.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-005",
+            "slug": "maki",
+            "label": "Maki Sushi Menu",
+            "labelJp": "巻き寿司メニュー",
+            "icon": "🌯",
+            "visible": true,
+            "order": 5,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "mak-01",
+                    "name": "California Roll",
+                    "price": 1150,
+                    "description": "Rice with avocado, cucumber, Japanese pumpkin rolled in seaweed",
+                    "image": "assets\/images\/menu\/6a15a83152bb6.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-02",
+                    "name": "Ebiko California Roll",
+                    "price": 1350,
+                    "description": "California roll with prawns eggs rolled in seaweed",
+                    "image": "assets\/images\/menu\/ebiko-california-roll_1779269412_6a0d7f2461560.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-03",
+                    "name": "Futomaki Special Roll",
+                    "price": 1650,
+                    "description": "Tuna, Salmon, Egg, Pumpkin, Avocado, Cucumber rolled in seaweed",
+                    "image": "assets\/images\/menu\/futomaki-special-roll_1779269443_6a0d7f4301c62.webp",
+                    "badge": "Popular",
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-04",
+                    "name": "Dynamite Roll or Veg Dynamite",
+                    "price": 1850,
+                    "description": "Shrimp Tempura with Hot Chilli and vegetable rolled in seaweed",
+                    "image": "assets\/images\/menu\/dynamite-roll-or-veg-dynamite_1779269566_6a0d7fbe533dd.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-05",
+                    "name": "Double Crunch Roll",
+                    "price": 1750,
+                    "description": "Prawn, Crunch, Veg with Mayonnaise",
+                    "image": "assets\/images\/menu\/double-crunch-roll_1779269593_6a0d7fd998a37.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-07",
+                    "name": "Salmon Thunder Roll",
+                    "price": 1950,
+                    "description": "Salmon or Tuna Crunch chilli with mayonnaise and Ebiko. Tuna Less 250",
+                    "image": "assets\/images\/menu\/salmon-thunder-roll_1779269633_6a0d80019a47d.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-08",
+                    "name": "Salmon California Roll",
+                    "price": 1550,
+                    "description": "Salmon California Roll. Tuna California Less 200",
+                    "image": "assets\/images\/menu\/salmon-california-roll_1779269854_6a0d80de49c5e.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-10",
+                    "name": "Rainbow Roll",
+                    "price": 1800,
+                    "description": "Tuna, Salmon, Red Snapper, Squid with Mayonnaise",
+                    "image": "assets\/images\/menu\/rainbow-roll_1779269900_6a0d810cf077c.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-11",
+                    "name": "Philadelphia Roll",
+                    "price": 1550,
+                    "description": "Salmon and Cheese rolled in Rice Paper",
+                    "image": "assets\/images\/menu\/philadelphia-roll_1779269927_6a0d81276669c.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-13",
+                    "name": "Crocodile Roll",
+                    "price": 1950,
+                    "description": "Unagi, Ebiko, Prawn",
+                    "image": "assets\/images\/menu\/crocodile-roll_1779270034_6a0d8192557a9.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-14",
+                    "name": "Prawns or Veg Tempura Roll",
+                    "price": 1450,
+                    "description": "Prawn or Vegetable Tempura Roll",
+                    "image": "assets\/images\/menu\/prawns-or-veg-tempura-roll_1779347166_6a0eaede10c79.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-15",
+                    "name": "Salmon Roll",
+                    "price": 1150,
+                    "description": "Salmon Roll. Tuna Roll Less 150",
+                    "image": "assets\/images\/menu\/salmon-roll_1779347195_6a0eaefb9087f.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "mak-18",
+                    "name": "Salmon Hand Roll Temaki",
+                    "price": 950,
+                    "description": "Salmon or Tuna Hand Roll. Tuna Hand Less 150",
+                    "image": "assets\/images\/menu\/salmon-hand-roll-temaki_1779347282_6a0eaf52a75c3.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-006",
+            "slug": "set-menu",
+            "label": "Table Dhote Set Menu",
+            "labelJp": "テーブルドートセット",
+            "icon": "🍽️",
+            "visible": true,
+            "order": 6,
+            "subcategories": [
+                {
+                    "id": "sub-004",
+                    "label": "Sukiyaki Beef or Veg",
+                    "visible": true,
+                    "order": 1,
+                    "items": [
+                        {
+                            "id": "suk-01",
+                            "name": "Beef Sukiyaki Per Portion",
+                            "price": 2450,
+                            "description": "Thinly sliced Sirloin of Beef with Tofu, Mushroom and Vegetable cooked in Special Sukiyaki Sauce served hot pot",
+                            "image": "assets\/images\/menu\/beef-sukiyaki-per-portion_1779347735_6a0eb1174655d.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                }
+            ],
+            "items": [
+                {
+                    "id": "set-01",
+                    "name": "Sashimi and Sushi Set",
+                    "price": 2650,
+                    "description": "Full Sashimi and Sushi set",
+                    "image": "assets\/images\/menu\/sashimi-and-sushi-set_1779347338_6a0eaf8a3b57f.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "set-03",
+                    "name": "Sushi and Tempura Udon Set",
+                    "price": 2450,
+                    "description": "Sushi paired with Tempura Udon",
+                    "image": "assets\/images\/menu\/sushi-and-tempura-udon-set_1779347438_6a0eafeebfdc6.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "set-10",
+                    "name": "Unagi Teriyaki with Veg",
+                    "price": 3450,
+                    "description": "Whole eel fish with Teriyaki sauce",
+                    "image": "assets\/images\/menu\/unagi-teriyaki-with-veg_1779347687_6a0eb0e76e7a9.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "set-11",
+                    "name": "Unagi Don",
+                    "price": 3450,
+                    "description": "Bowl of rice topped grilled whole eel fish",
+                    "image": "assets\/images\/menu\/unagi-don_1779347712_6a0eb1005c184.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-007",
+            "slug": "tempura",
+            "label": "Tempura Dish Starters",
+            "labelJp": "天ぷら",
+            "icon": "🍤",
+            "visible": true,
+            "order": 7,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "tmp-01",
+                    "name": "Prawns Tempura",
+                    "price": 1850,
+                    "description": "Tempura Prawns deep fried in light batter",
+                    "image": "assets\/images\/menu\/prawns-tempura_1779347765_6a0eb135e5d35.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "tmp-03",
+                    "name": "Vegetarian Tempura",
+                    "price": 1600,
+                    "description": "Tempura Vegetarian — assorted vegetables in light batter",
+                    "image": "assets\/images\/menu\/vegetarian-tempura_1779347920_6a0eb1d04618b.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-008",
+            "slug": "noodles",
+            "label": "Noodles (Hot Pot)",
+            "labelJp": "麺類",
+            "icon": "🍜",
+            "visible": true,
+            "order": 8,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "nod-01",
+                    "name": "Tempura Udon",
+                    "price": 1650,
+                    "description": "Japanese noodles broth with tempura",
+                    "image": "assets\/images\/menu\/tempura-udon_1779347975_6a0eb2079d798.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "nod-02",
+                    "name": "Kake Udon",
+                    "price": 1400,
+                    "description": "Japanese plain noodles broth",
+                    "image": "assets\/images\/menu\/kake-udon_1779348088_6a0eb278b9438.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "nod-03",
+                    "name": "Nabe Yaki Udon",
+                    "price": 1700,
+                    "description": "Noodles soup with prawns, chicken, fish, mushroom, tofu in a pot",
+                    "image": "assets\/images\/menu\/nabe-yaki-udon_1779348105_6a0eb28926fe8.webp",
+                    "badge": "Popular",
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-009",
+            "slug": "lunch",
+            "label": "Lunch Special (Teishoku)",
+            "labelJp": "ランチスペシャル",
+            "icon": "🌞",
+            "visible": true,
+            "order": 9,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "lun-01",
+                    "name": "Lunch Box Bento",
+                    "price": 1950,
+                    "description": "Sashimi, Tempura, Chicken, Pancake, Fish, Tofu with Rice and Soup",
+                    "image": "assets\/images\/menu\/lunch-box-bento_1779348189_6a0eb2ddb2c9e.webp",
+                    "badge": "Best Value",
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-02",
+                    "name": "Chicken Teriyaki",
+                    "price": 1850,
+                    "description": "Stir fried Chicken with teriyaki sauce and vegetables",
+                    "image": "assets\/images\/menu\/chicken-teriyaki_1779348210_6a0eb2f2834da.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-03",
+                    "name": "Chilli Chicken with Cashewnuts",
+                    "price": 1950,
+                    "description": "Stir fried Chicken with chilli, cashewnuts in oyster sauce",
+                    "image": "assets\/images\/menu\/chilli-chicken-with-cashewnuts_1779348230_6a0eb306db2f9.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-05",
+                    "name": "Don Katsu",
+                    "price": 1950,
+                    "description": "Deep fried Pork cutlet or Chicken or Beef or Fish",
+                    "image": "assets\/images\/menu\/don-katsu_1779348307_6a0eb3535502f.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-12",
+                    "name": "Zaru Soba",
+                    "price": 1650,
+                    "description": "Cold buckwheat noodles",
+                    "image": "assets\/images\/menu\/zaru-soba_1779348554_6a0eb44a056d3.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-13",
+                    "name": "Yaki Soba",
+                    "price": 1650,
+                    "description": "Fried buckwheat noodle with chicken or pork",
+                    "image": "assets\/images\/menu\/yaki-soba_1779348576_6a0eb4609e1fb.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-14",
+                    "name": "Yaki Udon",
+                    "price": 1650,
+                    "description": "Fried noodles with chicken or pork",
+                    "image": "assets\/images\/menu\/yaki-udon_1779348597_6a0eb47515523.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-15",
+                    "name": "Ramyeon and Futomaki",
+                    "price": 1500,
+                    "description": "Korean Instant noodles soup with special roll",
+                    "image": "assets\/images\/menu\/ramyeon-and-futomaki_1779348621_6a0eb48d0f4b7.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-17",
+                    "name": "Ten Don",
+                    "price": 1800,
+                    "description": "Bowl of rice topped with tempura",
+                    "image": "assets\/images\/menu\/ten-don_1779348645_6a0eb4a5dbdbd.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "lun-18",
+                    "name": "Chirashi Sushi",
+                    "price": 2250,
+                    "description": "Rice with Assorted Raw Fish Topping. Salmon only Extra 600",
+                    "image": "assets\/images\/menu\/chirashi-sushi_1779348667_6a0eb4bbd2724.webp",
+                    "badge": "Popular",
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-010",
+            "slug": "korean",
+            "label": "Korean Special Dishes",
+            "labelJp": "韓国料理",
+            "icon": "🇰🇷",
+            "visible": true,
+            "order": 10,
+            "subcategories": [
+                {
+                    "id": "sub-005",
+                    "label": "Korean A La Carte Side Dishes",
+                    "visible": true,
+                    "order": 1,
+                    "items": [
+                        {
+                            "id": "kor-ac-01",
+                            "name": "Jap-Chae",
+                            "price": 1200,
+                            "description": "Sweet potato noodle with mushroom and vegetables",
+                            "image": "assets\/images\/menu\/jap-chae_1779348826_6a0eb55a3b026.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "kor-ac-02",
+                            "name": "Ji-Ji Mi Bu-Chim-Gae",
+                            "price": 1250,
+                            "description": "Korean pancake kimchi, squid",
+                            "image": "assets\/images\/menu\/ji-ji-mi-bu-chim-gae_1779349121_6a0eb6815c16f.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "kor-ac-03",
+                            "name": "Tofu-Kimchi",
+                            "price": 1450,
+                            "description": "Sliced tofu with fried kimchi and pork",
+                            "image": "assets\/images\/menu\/tofu-kimchi_1779349005_6a0eb60d059f3.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                }
+            ],
+            "items": [
+                {
+                    "id": "kor-01",
+                    "name": "Korean Chilli Dish Hoe-Deop-Bap",
+                    "price": 1950,
+                    "description": "Bowl of rice topped with mixed raw fish and hot chili sauce",
+                    "image": "assets\/images\/menu\/korean-chilli-dish-hoe-deop-ba_1779348698_6a0eb4da9df4f.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "kor-02",
+                    "name": "Bi-Bim-Bap",
+                    "price": 1750,
+                    "description": "Mixed vegetable, beef and egg with Chilli sauce in Hot Stone bowl",
+                    "image": "assets\/images\/menu\/bi-bim-bap_1779348715_6a0eb4eb90d95.webp",
+                    "badge": "Popular",
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "kor-03",
+                    "name": "Kimchi Jjigae",
+                    "price": 1450,
+                    "description": "Kimchi with pork and bean curd in spicy hot pot",
+                    "image": "assets\/images\/menu\/kimchi-jjigae_1779348742_6a0eb506b8e40.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "kor-04",
+                    "name": "Doen Jang Jjigae",
+                    "price": 1450,
+                    "description": "Korean miso with vegetable and bean curd in hot pot",
+                    "image": "assets\/images\/menu\/doen-jang-jjigae_1779348762_6a0eb51a5e363.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "kor-05",
+                    "name": "Yuk-Gae-Jang",
+                    "price": 1550,
+                    "description": "Beef with vegetable and egg in spicy hot pot",
+                    "image": "assets\/images\/menu\/yuk-gae-jang_1779348787_6a0eb5332bd5b.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 999
+                },
+                {
+                    "id": "kor-06",
+                    "name": "Mae-Un-Tang Very Hot",
+                    "price": 1950,
+                    "description": "Fish with vegetable and bean curd in very spicy hot pot",
+                    "image": "assets\/images\/menu\/mae-un-tang-very-hot_1779348807_6a0eb54704356.webp",
+                    "badge": "Very Hot",
+                    "visible": true,
+                    "order": 999
+                }
+            ]
+        },
+        {
+            "id": "cat-011",
+            "slug": "teppanyaki",
+            "label": "Teppanyaki Set Menus",
+            "labelJp": "鉄板焼きセット",
+            "icon": "🔥",
+            "visible": true,
+            "order": 11,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "tep-01",
+                    "name": "Teppanyaki Set Furusato",
+                    "price": 4550,
+                    "description": "Seasonal Salad, Sushi and California Roll, Tuna Pancake, Prawns, Lobster, Chicken Teriyaki, Beef Fillet, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e0f0e7afc.jpg",
+                    "badge": "Chef's Recommendation",
+                    "visible": true,
+                    "order": 1
+                },
+                {
+                    "id": "tep-02",
+                    "name": "Teppanyaki Menu Special",
+                    "price": 4250,
+                    "description": "Seasonal Salad, Sushi and California, Tuna Pancake, Salmon, Chicken Teriyaki, Beef Fillet, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e0c12d924.jpg",
+                    "badge": null,
+                    "visible": true,
+                    "order": 2
+                },
+                {
+                    "id": "tep-03",
+                    "name": "Teppanyaki Menu Yama",
+                    "price": 5150,
+                    "description": "Seasonal Salad, Sashimi and Sushi and Tuna Soyae, Tuna Pancake, Lobster, Salmon, Chicken Teriyaki, Sirloin Steak or Fillet, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e0d7e9a44.jpg",
+                    "badge": "Premium",
+                    "visible": true,
+                    "order": 3
+                },
+                {
+                    "id": "tep-04",
+                    "name": "Teppanyaki Menu Seafood",
+                    "price": 4750,
+                    "description": "Seasonal Salad, Sushi and Tuna Soyuae, Tuna Pancake, Lobster, Prawns, Salmon, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e106bbdb6.jpg",
+                    "badge": null,
+                    "visible": true,
+                    "order": 4
+                },
+                {
+                    "id": "tep-05",
+                    "name": "Teppanyaki Menu Kawa",
+                    "price": 3850,
+                    "description": "Seasonal Salad, Vegetarian Roll, Tuna Pancake, Prawns, Chicken Teriyaki, Beef Fillet, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e3609e1a9.jpg",
+                    "badge": null,
+                    "visible": true,
+                    "order": 5
+                },
+                {
+                    "id": "tep-06",
+                    "name": "Teppanyaki Vegetarian",
+                    "price": 3250,
+                    "description": "Seasonal Salad, Vegetarian Sushi, Vegetable Tempura, Potato Pancake, Bean Curd Tofu, Gyoza, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e38e1677e.jpg",
+                    "badge": null,
+                    "visible": true,
+                    "order": 6
+                },
+                {
+                    "id": "tep-07",
+                    "name": "Teppanyaki Children",
+                    "price": 2750,
+                    "description": "Seasonal Salad, Vegetable Tempura, Tuna Pancake, Fish Steak, Chicken Teriyaki, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e3acdc239.jpg",
+                    "badge": "Kids",
+                    "visible": true,
+                    "order": 7
+                },
+                {
+                    "id": "tep-08",
+                    "name": "Lunch Teppanyaki Menu A",
+                    "price": 3750,
+                    "description": "Seasonal Salad, Sushi and Tuna Soyuae, Tuna Pancake, Prawn with Garlic, Lobster with Garlic, Beef Fillet, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e3d82bd2b.jpg",
+                    "badge": "Lunch Only",
+                    "visible": true,
+                    "order": 8
+                },
+                {
+                    "id": "tep-09",
+                    "name": "Lunch Teppanyaki Menu B",
+                    "price": 3250,
+                    "description": "Seasonal Salad, Vegetarian Maki, Vegetable Tempura, Tuna Pancake, Fish Steak, Chicken Teriyaki, Mixed Vegetable, Fried Rice with Soup, Fresh Fruits or Ice Cream",
+                    "image": "assets\/images\/menu\/6a17e3fca2168.jpg",
+                    "badge": "Lunch Only",
+                    "visible": true,
+                    "order": 9
+                }
+            ]
+        },
+        {
+            "id": "cat-012",
+            "slug": "alacarte-teppanyaki",
+            "label": "A La Carte Teppanyaki",
+            "labelJp": "鉄板焼きアラカルト",
+            "icon": "🥩",
+            "visible": true,
+            "order": 12,
+            "subcategories": [],
+            "items": [
+                {
+                    "id": "act-01",
+                    "name": "Beef Fillet with Garlic",
+                    "price": 1800,
+                    "description": "Grilled beef fillet with garlic on teppanyaki grill",
+                    "image": "https:\/\/images.unsplash.com\/photo-1544025162-d76538879e3c?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 1
+                },
+                {
+                    "id": "act-02",
+                    "name": "Chicken with White Onion",
+                    "price": 1750,
+                    "description": "Chicken grilled with white onion on teppanyaki",
+                    "image": "https:\/\/images.unsplash.com\/photo-1569050467447-ce54b3bbc37d?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 2
+                },
+                {
+                    "id": "act-03",
+                    "name": "Pork Loin with White Onion",
+                    "price": 1750,
+                    "description": "Pork loin grilled with white onion",
+                    "image": "https:\/\/images.unsplash.com\/photo-1544025162-d76538879e3c?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 3
+                },
+                {
+                    "id": "act-04",
+                    "name": "Prawns and Spring Onion",
+                    "price": 2050,
+                    "description": "Fresh prawns grilled with spring onion",
+                    "image": "https:\/\/images.unsplash.com\/photo-1625943553852-781c6dd46faa?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 4
+                },
+                {
+                    "id": "act-05",
+                    "name": "Fish Steak Red Snapper",
+                    "price": 1900,
+                    "description": "Red snapper fish steak on teppanyaki",
+                    "image": "https:\/\/images.unsplash.com\/photo-1562802378-063ec186a863?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 5
+                },
+                {
+                    "id": "act-06",
+                    "name": "Lobster with Garlic",
+                    "price": 3150,
+                    "description": "Whole lobster grilled with garlic",
+                    "image": "https:\/\/images.unsplash.com\/photo-1559847844-5315695dadae?w=800&q=80",
+                    "badge": "Premium",
+                    "visible": true,
+                    "order": 6
+                },
+                {
+                    "id": "act-07",
+                    "name": "Salmon with Garlic",
+                    "price": 2450,
+                    "description": "Fresh salmon grilled with garlic",
+                    "image": "https:\/\/images.unsplash.com\/photo-1534482421-64566f976cfa?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 7
+                },
+                {
+                    "id": "act-08",
+                    "name": "Fried Seafood Rice",
+                    "price": 1050,
+                    "description": "Fried rice with mixed seafood",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 8
+                },
+                {
+                    "id": "act-09",
+                    "name": "Fried Rice and Mixed Vegetable",
+                    "price": 1350,
+                    "description": "Fried rice with mixed vegetables",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 9
+                },
+                {
+                    "id": "act-10",
+                    "name": "Fried Noodles and Mixed Vegetable",
+                    "price": 1450,
+                    "description": "Fried noodles with mixed vegetables",
+                    "image": "https:\/\/images.unsplash.com\/photo-1569718212165-3a8278d5f624?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 10
+                },
+                {
+                    "id": "act-11",
+                    "name": "Fried Rice Vegetable",
+                    "price": 750,
+                    "description": "Vegetable fried rice",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 11
+                },
+                {
+                    "id": "act-12",
+                    "name": "Egg Fried Rice",
+                    "price": 850,
+                    "description": "Classic egg fried rice",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 12
+                },
+                {
+                    "id": "act-13",
+                    "name": "Chicken Fried Rice",
+                    "price": 900,
+                    "description": "Chicken fried rice",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 13
+                },
+                {
+                    "id": "act-14",
+                    "name": "Fried Mixed Vegetable",
+                    "price": 800,
+                    "description": "Stir-fried mixed vegetables",
+                    "image": "https:\/\/images.unsplash.com\/photo-1565299624946-b28f40a0ae38?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 14
+                },
+                {
+                    "id": "act-15",
+                    "name": "Fried Noodle",
+                    "price": 950,
+                    "description": "Fried noodles",
+                    "image": "https:\/\/images.unsplash.com\/photo-1569718212165-3a8278d5f624?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 15
+                },
+                {
+                    "id": "act-16",
+                    "name": "Miso Soup or Seaweed Soup",
+                    "price": 350,
+                    "description": "Traditional miso or seaweed soup",
+                    "image": "https:\/\/images.unsplash.com\/photo-1547592180-85f173990554?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 16
+                },
+                {
+                    "id": "act-17",
+                    "name": "Kimchi",
+                    "price": 350,
+                    "description": "Traditional Korean kimchi",
+                    "image": "https:\/\/images.unsplash.com\/photo-1563245372-f21724e3856d?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 17
+                },
+                {
+                    "id": "act-18",
+                    "name": "Steamed Rice",
+                    "price": 400,
+                    "description": "Steamed Japanese rice",
+                    "image": "https:\/\/images.unsplash.com\/photo-1603133872878-684f208fb84b?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 18
+                },
+                {
+                    "id": "act-19",
+                    "name": "Seasonal Salad",
+                    "price": 250,
+                    "description": "Fresh seasonal salad",
+                    "image": "https:\/\/images.unsplash.com\/photo-1540189549336-e6e99c3679fe?w=800&q=80",
+                    "badge": null,
+                    "visible": true,
+                    "order": 19
+                }
+            ]
+        },
+        {
+            "id": "cat-013",
+            "slug": "drinks",
+            "label": "Drinks Menu",
+            "labelJp": "ドリンクメニュー",
+            "icon": "🍷",
+            "visible": true,
+            "order": 13,
+            "subcategories": [
+                {
+                    "id": "sub-006",
+                    "label": "Wine",
+                    "visible": true,
+                    "order": 1,
+                    "items": [
+                        {
+                            "id": "drk-w-01",
+                            "name": "Bruce Jack Chenin Blanc",
+                            "price": 4100,
+                            "description": "White wine South Africa",
+                            "image": "assets\/images\/menu\/6a1464aa173d6.png",
+                            "badge": null,
+                            "visible": true,
+                            "order": 1
+                        },
+                        {
+                            "id": "drk-w-02",
+                            "name": "Niel Joubert Sauvignon",
+                            "price": 3800,
+                            "description": "Blanc (Newzealand)",
+                            "image": "assets\/images\/menu\/6a14653eea86d.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 2
+                        },
+                        {
+                            "id": "drk-w-03",
+                            "name": "Nederburg Chardonnay",
+                            "price": 4900,
+                            "description": "South Africa",
+                            "image": "assets\/images\/menu\/6a1467cb22628.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 3
+                        }
+                    ]
+                },
+                {
+                    "id": "sub-007",
+                    "label": "Cocktails",
+                    "visible": true,
+                    "order": 2,
+                    "items": [
+                        {
+                            "id": "drk-c-01",
+                            "name": "Dawa",
+                            "price": 750,
+                            "description": "Vodka,Lime juice,Honey Syrup",
+                            "image": "assets\/images\/menu\/6a14695eee100.jpg",
+                            "badge": "Signature",
+                            "visible": true,
+                            "order": 1
+                        },
+                        {
+                            "id": "drk-c-02",
+                            "name": "Virgin Dawa",
+                            "price": 480,
+                            "description": "Fresh ginger,Lime juice,Honey, Garlic",
+                            "image": "assets\/images\/menu\/6a1469d48542c.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 2
+                        },
+                        {
+                            "id": "drk-c-03",
+                            "name": "Mojito",
+                            "price": 850,
+                            "description": "Rum, Lime juice and Mint leaves & Sugar syrup",
+                            "image": "assets\/images\/menu\/6a146b527e6a5.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 3
+                        },
+                        {
+                            "id": "drk-c-04",
+                            "name": "Margarita",
+                            "price": 800,
+                            "description": "Tequila and Lime Juice and Triple sec",
+                            "image": "assets\/images\/menu\/6a146b91e1193.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 4
+                        },
+                        {
+                            "id": "drk-c-05",
+                            "name": "Daquiri Passion",
+                            "price": 900,
+                            "description": "Passion juice,Rum, Lime juice and Syrup",
+                            "image": "assets\/images\/menu\/6a146bef9def6.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 5
+                        },
+                        {
+                            "id": "item-6a146c4c04447",
+                            "name": "Pina Colada",
+                            "description": "Rum, Pinneaple,Coconut cream",
+                            "price": 1380,
+                            "image": "assets\/images\/menu\/6a146c4c041e6.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a146c8ddd902",
+                            "name": "Negroni",
+                            "description": "Lime juice, Gin, Campari, Vermouth",
+                            "price": 850,
+                            "image": "assets\/images\/menu\/6a146c8ddd69a.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                },
+                {
+                    "id": "sub-008",
+                    "label": "Mocktails",
+                    "visible": true,
+                    "order": 3,
+                    "items": []
+                },
+                {
+                    "id": "sub-6a19b1f3a8a21",
+                    "label": "Sake (Japanese Rice Wine)",
+                    "labelJp": "",
+                    "icon": "🍶",
+                    "visible": true,
+                    "order": 4,
+                    "items": [
+                        {
+                            "id": "item-6a19b3e5a7fd1",
+                            "name": "Sake Hakusuru (200ml)",
+                            "description": "Small Per Pot",
+                            "price": 1200,
+                            "image": "assets\/images\/menu\/6a19b3e5a7edd.webp",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a19b41b473e4",
+                            "name": "Sake Hakusuru (400ml)",
+                            "description": "Large Per Pot",
+                            "price": 2300,
+                            "image": "assets\/images\/menu\/6a19b41b47162.png",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a19b4519354d",
+                            "name": "Sake Hakusuru (1800ml)",
+                            "description": "Bottle",
+                            "price": 8600,
+                            "image": "assets\/images\/menu\/6a19b45192d30.png",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a19b48d9c37a",
+                            "name": "Sake Gekkeikan",
+                            "description": "",
+                            "price": 2800,
+                            "image": "assets\/images\/menu\/6a19b48d9c1d2.png",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                },
+                {
+                    "id": "sub-6a19b6307308b",
+                    "label": "Korean SOJU",
+                    "labelJp": "",
+                    "icon": "🍾",
+                    "visible": true,
+                    "order": 5,
+                    "items": [
+                        {
+                            "id": "item-6a19b66354638",
+                            "name": "Soju (360ml)",
+                            "description": "Bottle",
+                            "price": 1400,
+                            "image": "assets\/images\/menu\/6a1ab71f65b38.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                },
+                {
+                    "id": "sub-6a19b73699fb7",
+                    "label": "Coffees &  Tea",
+                    "labelJp": "커피와 차",
+                    "icon": "☕",
+                    "visible": true,
+                    "order": 6,
+                    "items": [
+                        {
+                            "id": "item-6a19b7578d0de",
+                            "name": "Kenyan Tea",
+                            "description": "",
+                            "price": 200,
+                            "image": "assets\/images\/menu\/6a19b7578cf82.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a1ab339236a7",
+                            "name": "Espresso Single",
+                            "description": "",
+                            "price": 150,
+                            "image": "assets\/images\/menu\/6a1ab3392330e.png",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        },
+                        {
+                            "id": "item-6a1ab512baaaa",
+                            "name": "Machiato Double",
+                            "description": "",
+                            "price": 250,
+                            "image": "assets\/images\/menu\/6a1ab512ba945.jpg",
+                            "badge": null,
+                            "visible": true,
+                            "order": 999
+                        }
+                    ]
+                }
+            ],
+            "items": []
+        }
+    ]
+}

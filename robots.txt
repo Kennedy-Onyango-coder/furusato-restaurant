@@ -1,0 +1,46 @@
+# Furusato Japanese Restaurant - Robots.txt
+# Optimized for SEO and security
+
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /menu.php
+Allow: /our-story.php
+Allow: /contact.php
+
+# Disallow admin and backend directories
+Disallow: /admin/
+Disallow: /api/
+Disallow: /data/
+Disallow: /includes/
+Disallow: /logs/
+Disallow: /vendor/
+Disallow: /temp/
+Disallow: /backups/
+Disallow: /assets/images/menu/raw/
+
+# Disallow only harmful parameters (NOT all query strings)
+Disallow: /*?ref=
+Disallow: /*?utm_
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
+Disallow: /*?source=
+Disallow: /*?mc_cid=
+Disallow: /*?mc_eid=
+
+# Allow category parameters (important for SEO)
+Allow: /menu.php?category=
+
+# Disallow admin-specific parameters
+Disallow: /*?action=edit
+Disallow: /*?action=delete
+Disallow: /*?debug=*
+
+# Crawl delay (gentle on server)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://furusatorestaurant.com/sitemap.php
+
+# Host directive (helps Google choose correct domain)
+Host: https://furusatorestaurant.com

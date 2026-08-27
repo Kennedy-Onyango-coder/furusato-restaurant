@@ -1,0 +1,14 @@
+[
+    {
+        "id": "RES-XXXXXXXX",
+        "name": "Customer Name",
+        "email": "customer@example.com",
+        "phone": "+254700000000",
+        "date": "2026-01-01",
+        "time": "18:00",
+        "guests": 2,
+        "special_requests": "",
+        "status": "pending",
+        "created": "2026-01-01T00:00:00+03:00"
+    }
+]

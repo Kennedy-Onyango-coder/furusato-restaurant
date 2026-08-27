@@ -1,0 +1,7 @@
+{
+    "email": "admin@example.com",
+    "password": "<bcrypt-hash>",
+    "totpEnabled": false,
+    "totpSecret": "",
+    "backup_codes": []
+}
