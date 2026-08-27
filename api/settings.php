@@ -71,8 +71,8 @@ function getSettings() {
                 'address' => 'Ring Road Parklands, Westlands, Nairobi, Kenya'
             ],
             'whatsapp' => [
-                'api_key' => '3219514',
-                'phone_number' => '+254734639203'
+                'api_key' => '',
+                'phone_number' => ''
             ],
             'last_updated' => date('c')
         ];
@@ -93,7 +93,7 @@ function getSettings() {
         ];
     }
     if (!isset($data['whatsapp'])) {
-        $data['whatsapp'] = ['api_key' => '3219514', 'phone_number' => '+254734639203'];
+        $data['whatsapp'] = ['api_key' => '', 'phone_number' => ''];
     }
     
     return $data;

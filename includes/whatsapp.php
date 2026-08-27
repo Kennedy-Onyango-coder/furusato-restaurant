@@ -9,11 +9,19 @@
 date_default_timezone_set('Africa/Nairobi');
 
 function sendWhatsAppReservation($reservation) {
-    // Your WhatsApp Business number (international format, NO plus sign, NO spaces)
-    $yourWhatsAppNumber = '254734639203';
+    // Load credentials from settings.json
+    $settingsFile = __DIR__ . '/../data/settings.json';
+    $settings = [];
+    if (file_exists($settingsFile)) {
+        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+    }
+    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
+    $apiKey = $settings['whatsapp_api_key'] ?? '';
     
-    // Your CallMeBot API key
-    $apiKey = '3219514';
+    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
+        error_log('WhatsApp notification skipped: not configured');
+        return false;
+    }
     
     // Get current Nairobi time
     $submissionTime = date('h:i A');
@@ -77,8 +85,17 @@ function sendWhatsAppReservation($reservation) {
 
 // Send a simple test message
 function sendWhatsAppTest($message) {
-    $yourWhatsAppNumber = '254734639203';
-    $apiKey = '3219514';
+    $settingsFile = __DIR__ . '/../data/settings.json';
+    $settings = [];
+    if (file_exists($settingsFile)) {
+        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+    }
+    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
+    $apiKey = $settings['whatsapp_api_key'] ?? '';
+    
+    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
+        return ['success' => false, 'response' => 'WhatsApp not configured'];
+    }
     
     $url = "https://api.callmebot.com/whatsapp.php?phone={$yourWhatsAppNumber}&text=" . urlencode($message) . "&apikey={$apiKey}";
     

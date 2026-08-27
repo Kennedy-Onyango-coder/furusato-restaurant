@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * admin/dashboard.php - Furusato Admin Dashboard
  * FULLY FUNCTIONAL VERSION
@@ -39,7 +39,7 @@ if ($menu && isset($menu['categories'])) {
             'id'     => $cat['id'],
             'label'  => $cat['label'],
             'slug'   => $cat['slug'] ?? '',
-            'icon'   => $cat['icon'] ?? '📋',
+            'icon'   => $cat['icon'] ?? 'ðŸ“‹',
             'visible'=> $cat['visible'] ?? true,
             'order'  => $cat['order'] ?? 999,
             'subcats'=> $cat['subcategories'] ?? []
@@ -58,7 +58,7 @@ $settings = getJsonData('settings');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-  <title>Furusato Admin — Dashboard</title>
+  <title>Furusato Admin â€” Dashboard</title>
   <link rel="icon" type="image/png" href="/assets/images/furusato-logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -301,10 +301,10 @@ $settings = getJsonData('settings');
     <div class="top-header"><h1 class="page-title" id="main-title">Menu Management</h1></div>
     
     <div class="stats-grid" id="stats-container">
-      <div class="stat-card"><div class="stat-header"><span>Total Categories</span><i class="fas fa-tags"></i></div><div class="stat-value" id="stat-categories">—</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Subcategories</span><i class="fas fa-folder-open"></i></div><div class="stat-value" id="stat-subcategories">—</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Menu Items</span><i class="fas fa-hamburger"></i></div><div class="stat-value" id="stat-items">—</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Popular Dishes</span><i class="fas fa-star"></i></div><div class="stat-value" id="stat-popular">—</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Total Categories</span><i class="fas fa-tags"></i></div><div class="stat-value" id="stat-categories">â€”</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Subcategories</span><i class="fas fa-folder-open"></i></div><div class="stat-value" id="stat-subcategories">â€”</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Menu Items</span><i class="fas fa-hamburger"></i></div><div class="stat-value" id="stat-items">â€”</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Popular Dishes</span><i class="fas fa-star"></i></div><div class="stat-value" id="stat-popular">â€”</div></div>
     </div>
     
     <div class="toolbar" id="menu-toolbar">
@@ -354,14 +354,14 @@ $settings = getJsonData('settings');
         <div class="form-actions"><button type="submit" class="btn-modern btn-primary-modern"><i class="fas fa-save"></i> Save Restaurant Settings</button></div></form></div></div>
 
         <div class="settings-card"><div class="settings-card-header"><div class="settings-card-icon"><i class="fab fa-whatsapp"></i></div><div class="settings-card-title"><h3>WhatsApp Integration</h3><p>Configure WhatsApp notifications for reservations</p></div></div>
-        <div class="settings-card-body"><form id="whatsapp-settings-form" class="settings-form"><div class="form-group-modern"><label class="form-label-modern"><i class="fas fa-key"></i> CallMeBot API Key</label><input type="text" id="whatsapp-api-key" class="form-input-modern" value="3219514" placeholder="Enter your CallMeBot API key"><div class="info-box"><i class="fas fa-info-circle"></i> Get your API key by sending "I allow callmebot to send me messages" to +34 666 66 74 26 on WhatsApp</div></div>
+        <div class="settings-card-body"><form id="whatsapp-settings-form" class="settings-form"><div class="form-group-modern"><label class="form-label-modern"><i class="fas fa-key"></i> CallMeBot API Key</label><input type="text" id="whatsapp-api-key" class="form-input-modern" value="" placeholder="Enter your CallMeBot API key"><div class="info-box"><i class="fas fa-info-circle"></i> Get your API key by sending "I allow callmebot to send me messages" to +34 666 66 74 26 on WhatsApp</div></div>
         <div class="form-actions-group"><button type="button" class="btn-modern btn-outline-modern" onclick="testWhatsApp()"><i class="fab fa-whatsapp"></i> Send Test Message</button><button type="submit" class="btn-modern btn-primary-modern"><i class="fas fa-save"></i> Save WhatsApp Settings</button></div></form></div></div>
       </div>
     </div>
   </main>
 </div>
 
-<div id="session-warning" class="session-modal"><span>⚠️ Your session will expire in <span id="session-timer">5:00</span></span><button onclick="extendSession()">Stay Logged In</button></div>
+<div id="session-warning" class="session-modal"><span>âš ï¸ Your session will expire in <span id="session-timer">5:00</span></span><button onclick="extendSession()">Stay Logged In</button></div>
 
 <!-- Modals -->
 <div class="modal" id="item-modal"><div class="modal-content"><div class="modal-header"><h3 id="item-modal-title">Add Menu Item</h3><button class="modal-close" onclick="closeModal('item-modal')"><i class="fas fa-times"></i></button></div>
@@ -372,19 +372,19 @@ $settings = getJsonData('settings');
 <div class="form-group"><label class="form-label">Description</label><textarea id="item-description" name="description" class="form-textarea" rows="3"></textarea></div>
 <div class="form-row"><div class="form-group"><label class="form-label">Current Price (KES) *</label><input type="number" id="item-price" name="price" class="form-input" required min="0" step="50"></div>
 <div class="form-group"><label class="form-label">Original Price (KES)</label><input type="number" id="item-original-price" name="original_price" class="form-input" min="0" step="50" placeholder="Leave empty if no discount"></div></div>
-<div class="popular-toggle"><input type="checkbox" id="item-popular" name="is_popular" value="1"><label for="item-popular">🌟 Mark as Popular Dish</label><input type="hidden" id="item-badge" name="badge" value=""></div>
+<div class="popular-toggle"><input type="checkbox" id="item-popular" name="is_popular" value="1"><label for="item-popular">ðŸŒŸ Mark as Popular Dish</label><input type="hidden" id="item-badge" name="badge" value=""></div>
 <div class="form-group"><label class="form-label">Item Image</label><div class="upload-zone" id="upload-zone"><i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; color: var(--gray-400);"></i><p style="margin-top: 8px; font-size: 0.8rem; color: var(--gray-500);">Click or drag to upload image</p></div><input type="file" id="item-image" name="image" accept="image/*" style="display:none;"><div class="image-preview" id="image-preview" style="display:none; margin-top: 12px;"><img id="preview-img" src="" alt="Preview" style="width: 60px; height: 60px; border-radius: var(--radius); object-fit: cover;"><button type="button" class="btn btn-outline btn-sm" onclick="clearImage()">Remove</button></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('item-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Item</button></div></form></div></div>
 
 <div class="modal" id="category-modal"><div class="modal-content"><div class="modal-header"><h3 id="category-modal-title">Add Category</h3><button class="modal-close" onclick="closeModal('category-modal')"><i class="fas fa-times"></i></button></div>
 <form id="category-form"><div class="modal-body"><input type="hidden" id="category-id" name="category_id"><div class="form-group"><label class="form-label">Category Name *</label><input type="text" id="category-name" name="label" class="form-input" required></div><div class="form-group"><label class="form-label">Japanese Name</label><input type="text" id="category-jp" name="labelJp" class="form-input"></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="category-icon" name="icon" class="form-input" placeholder="🍣"></div><div class="form-group"><label class="form-label">Visible</label><select id="category-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="category-icon" name="icon" class="form-input" placeholder="ðŸ£"></div><div class="form-group"><label class="form-label">Visible</label><select id="category-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('category-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Category</button></div></form></div></div>
 
 <div class="modal" id="subcategory-modal"><div class="modal-content"><div class="modal-header"><h3 id="subcategory-modal-title">Add Subcategory</h3><button class="modal-close" onclick="closeModal('subcategory-modal')"><i class="fas fa-times"></i></button></div>
 <form id="subcategory-form"><div class="modal-body"><input type="hidden" id="subcategory-id" name="subcategory_id"><div class="form-group"><label class="form-label">Parent Category *</label><select id="subcategory-parent" name="parent_id" class="form-select" required><option value="">Select category</option><?php foreach ($categories as $cat): ?><option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['label']) ?></option><?php endforeach; ?></select></div>
 <div class="form-group"><label class="form-label">Subcategory Name *</label><input type="text" id="subcategory-label" name="label" class="form-input" required></div><div class="form-group"><label class="form-label">Japanese Name</label><input type="text" id="subcategory-jp" name="labelJp" class="form-input"></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="subcategory-icon" name="icon" class="form-input" placeholder="🥗"></div><div class="form-group"><label class="form-label">Visible</label><select id="subcategory-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="subcategory-icon" name="icon" class="form-input" placeholder="ðŸ¥—"></div><div class="form-group"><label class="form-label">Visible</label><select id="subcategory-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('subcategory-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Subcategory</button></div></form></div></div>
 
 <div class="modal" id="delete-modal"><div class="modal-content" style="max-width: 400px;"><div class="modal-header"><h3>Confirm Delete</h3><button class="modal-close" onclick="closeModal('delete-modal')"><i class="fas fa-times"></i></button></div>
@@ -401,7 +401,7 @@ $settings = getJsonData('settings');
 <div class="modal" id="backup-modal"><div class="modal-content" style="max-width: 600px;"><div class="modal-header"><h3>Backup & Restore</h3><button class="modal-close" onclick="closeModal('backup-modal')"><i class="fas fa-times"></i></button></div>
 <div class="modal-body"><div style="margin-bottom: 24px;"><h4>Create Backup</h4><button class="btn btn-primary" onclick="createBackup()"><i class="fas fa-database"></i> Create New Backup</button></div>
 <div style="margin-bottom: 24px;"><h4>Export Menu</h4><button class="btn btn-outline" onclick="exportMenu()"><i class="fas fa-download"></i> Download Menu JSON</button></div>
-<div style="margin-bottom: 24px;"><h4>Import Menu</h4><input type="file" id="import-file" accept=".json" style="display:none;" onchange="importMenu(this)"><button class="btn btn-outline" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Import JSON File</button><p class="form-hint">⚠️ Import will overwrite current menu. A backup will be created automatically.</p></div>
+<div style="margin-bottom: 24px;"><h4>Import Menu</h4><input type="file" id="import-file" accept=".json" style="display:none;" onchange="importMenu(this)"><button class="btn btn-outline" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Import JSON File</button><p class="form-hint">âš ï¸ Import will overwrite current menu. A backup will be created automatically.</p></div>
 <div><h4>Available Backups</h4><div id="backups-list" style="max-height: 300px; overflow-y: auto;"></div></div></div>
 <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('backup-modal')">Close</button></div></div></div>
 
@@ -581,12 +581,12 @@ function renderMenu(categories) {
     for (let c = 0; c < categories.length; c++) {
         const cat = categories[c], items = cat.items || [], subcats = cat.subcategories || [];
         let totalSubItems = 0; for (let s = 0; s < subcats.length; s++) totalSubItems += (subcats[s].items || []).length;
-        html += '<div class="category-card" data-category-id="' + cat.id + '"><div class="category-header" draggable="true" data-cat-id="' + cat.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="category-icon">' + (cat.icon || '📋') + '</span><span class="category-name">' + escapeHtml(cat.label) + '</span><span class="category-badge">' + (items.length + totalSubItems) + ' items</span><div class="category-actions"><button class="action-btn" onclick="editCategory(\'' + cat.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-danger" onclick="deleteCategory(\'' + cat.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+        html += '<div class="category-card" data-category-id="' + cat.id + '"><div class="category-header" draggable="true" data-cat-id="' + cat.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="category-icon">' + (cat.icon || 'ðŸ“‹') + '</span><span class="category-name">' + escapeHtml(cat.label) + '</span><span class="category-badge">' + (items.length + totalSubItems) + ' items</span><div class="category-actions"><button class="action-btn" onclick="editCategory(\'' + cat.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-danger" onclick="deleteCategory(\'' + cat.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
         if (subcats.length > 0) {
             html += '<div class="subcategories-list" data-cat-id="' + cat.id + '">';
             for (let s = 0; s < subcats.length; s++) {
                 const sub = subcats[s];
-                html += '<div class="subcategory-item" draggable="true" data-sub-id="' + sub.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="subcategory-icon">' + (sub.icon || '📁') + '</span><span class="subcategory-name">' + escapeHtml(sub.label) + '</span><span class="subcategory-badge">' + ((sub.items || []).length) + ' items</span><div class="subcategory-actions"><button class="action-btn action-btn-sm" onclick="editSubcategory(\'' + sub.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-sm action-btn-danger" onclick="deleteSubcategory(\'' + sub.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+                html += '<div class="subcategory-item" draggable="true" data-sub-id="' + sub.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="subcategory-icon">' + (sub.icon || 'ðŸ“') + '</span><span class="subcategory-name">' + escapeHtml(sub.label) + '</span><span class="subcategory-badge">' + ((sub.items || []).length) + ' items</span><div class="subcategory-actions"><button class="action-btn action-btn-sm" onclick="editSubcategory(\'' + sub.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-sm action-btn-danger" onclick="deleteSubcategory(\'' + sub.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
             }
             html += '</div>';
         }
@@ -937,7 +937,7 @@ function renderReservations(reservations) {
         try { const dateObj = new Date(res.date); if (!isNaN(dateObj.getTime())) { formattedDate = dateObj.toLocaleDateString('en-KE', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }); } } catch(e) { }
         html += '<div class="reservation-card-modern" data-reservation-id="' + escapeHtml(reservationId) + '"><div class="reservation-header-modern"><div class="reservation-guest-modern"><div class="reservation-avatar-modern">' + escapeHtml(guestInitial) + '</div><div class="reservation-info-modern"><h4>' + escapeHtml(guestName) + '</h4><p><i class="fas fa-envelope"></i> ' + escapeHtml(guestEmail) + '</p></div></div><div class="reservation-status-modern ' + statusClass + '">' + escapeHtml(statusText) + '</div></div><div class="reservation-details-modern"><div class="reservation-detail-modern"><i class="fas fa-phone"></i><span><strong>Phone:</strong> ' + escapeHtml(guestPhone) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-calendar"></i><span><strong>Date:</strong> ' + escapeHtml(formattedDate) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-clock"></i><span><strong>Time:</strong> ' + escapeHtml(guestTime) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-users"></i><span><strong>Guests:</strong> ' + escapeHtml(guestCount) + '</span></div><div class="reservation-id-modern"><i class="fas fa-hashtag"></i> ' + escapeHtml(reservationId) + '</div></div>';
         if (specialRequests) { html += '<div class="reservation-requests-modern"><div class="label"><i class="fas fa-pen"></i> Special Requests</div><div class="text">' + escapeHtml(specialRequests) + '</div></div>'; }
-        html += '<div class="reservation-actions-modern"><select class="form-select" style="width: auto; padding: 8px 14px; font-size: 0.75rem;" onchange="updateReservationStatus(\'' + escapeHtml(reservationId) + '\', this.value)"><option value="pending" ' + (safeString(res.status) === 'pending' ? 'selected' : '') + '>⏳ Pending</option><option value="confirmed" ' + (safeString(res.status) === 'confirmed' ? 'selected' : '') + '>✅ Confirmed</option><option value="cancelled" ' + (safeString(res.status) === 'cancelled' ? 'selected' : '') + '>❌ Cancelled</option></select><button class="action-btn action-btn-danger action-btn-sm" onclick="deleteReservation(\'' + escapeHtml(reservationId) + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+        html += '<div class="reservation-actions-modern"><select class="form-select" style="width: auto; padding: 8px 14px; font-size: 0.75rem;" onchange="updateReservationStatus(\'' + escapeHtml(reservationId) + '\', this.value)"><option value="pending" ' + (safeString(res.status) === 'pending' ? 'selected' : '') + '>â³ Pending</option><option value="confirmed" ' + (safeString(res.status) === 'confirmed' ? 'selected' : '') + '>âœ… Confirmed</option><option value="cancelled" ' + (safeString(res.status) === 'cancelled' ? 'selected' : '') + '>âŒ Cancelled</option></select><button class="action-btn action-btn-danger action-btn-sm" onclick="deleteReservation(\'' + escapeHtml(reservationId) + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
     }
     html += '</div>';
     if (reservationsContainer) reservationsContainer.innerHTML = html;
