@@ -8,18 +8,27 @@
 // Set timezone to Nairobi
 date_default_timezone_set('Africa/Nairobi');
 
+// Credentials come from server-side configuration (see includes/config.php):
+// environment variables and/or the production-only, gitignored includes/.env.php,
+// falling back to the admin-managed values in data/settings.json.
+require_once __DIR__ . '/config.php';
+
 function sendWhatsAppReservation($reservation) {
-    // Load credentials from settings.json
-    $settingsFile = __DIR__ . '/../data/settings.json';
-    $settings = [];
-    if (file_exists($settingsFile)) {
-        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+    $yourWhatsAppNumber = furusato_whatsapp_phone();
+    $apiKey = furusato_whatsapp_api_key();
+    if ($apiKey === '') {
+        $settingsFile = __DIR__ . '/../data/settings.json';
+        if (is_file($settingsFile)) {
+            $stored = json_decode((string) file_get_contents($settingsFile), true);
+            if (is_array($stored)) {
+                $apiKey = (string) ($stored['whatsapp']['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+            }
+        }
     }
-    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
-    $apiKey = $settings['whatsapp_api_key'] ?? '';
-    
-    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
-        error_log('WhatsApp notification skipped: not configured');
+
+    // Gracefully skip (with a log entry) when WhatsApp is not configured.
+    if ($apiKey === '' || $yourWhatsAppNumber === '') {
+        error_log('WhatsApp notification skipped for reservation ' . ($reservation['id'] ?? '?') . ': WhatsApp is not configured.');
         return false;
     }
     
@@ -85,16 +94,19 @@ function sendWhatsAppReservation($reservation) {
 
 // Send a simple test message
 function sendWhatsAppTest($message) {
-    $settingsFile = __DIR__ . '/../data/settings.json';
-    $settings = [];
-    if (file_exists($settingsFile)) {
-        $settings = json_decode(file_get_contents($settingsFile), true) ?: [];
+    $yourWhatsAppNumber = furusato_whatsapp_phone();
+    $apiKey = furusato_whatsapp_api_key();
+    if ($apiKey === '') {
+        $settingsFile = __DIR__ . '/../data/settings.json';
+        if (is_file($settingsFile)) {
+            $stored = json_decode((string) file_get_contents($settingsFile), true);
+            if (is_array($stored)) {
+                $apiKey = (string) ($stored['whatsapp']['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+            }
+        }
     }
-    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
-    $apiKey = $settings['whatsapp_api_key'] ?? '';
-    
-    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
-        return ['success' => false, 'response' => 'WhatsApp not configured'];
+    if ($apiKey === '' || $yourWhatsAppNumber === '') {
+        return ['success' => false, 'response' => 'WhatsApp is not configured'];
     }
     
     $url = "https://api.callmebot.com/whatsapp.php?phone={$yourWhatsAppNumber}&text=" . urlencode($message) . "&apikey={$apiKey}";

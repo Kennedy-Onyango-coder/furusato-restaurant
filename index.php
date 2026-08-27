@@ -13,9 +13,15 @@ $mainJsVersion   = get_asset_version('assets/js/main.js');
 $settings = getJsonData('settings');
 $restaurantName = $settings['name'] ?? 'Furusato Japanese Restaurant';
 $restaurantPhone = $settings['phone'] ?? '+254722488706';
-$restaurantWhatsapp = $settings['whatsapp'] ?? '+254734639203';
+// Single source of truth: Admin → Settings → WhatsApp
+$restaurantWhatsapp = get_whatsapp_number();
 $restaurantEmail = $settings['email'] ?? 'furusatorestaurant@gmail.com';
 $restaurantAddress = $settings['address'] ?? 'Ring Road Parklands, Westlands, Nairobi, Kenya';
+
+// Pre-filled WhatsApp messages (enquiry/communication channel — not ordering)
+$waGeneralMsg = "Hello Furusato Japanese Restaurant,\n\nI have an enquiry.\n\nThank you.";
+$waReservationMsg = "Hello Furusato Japanese Restaurant,\n\nI would like to make a reservation.\n\nThank you.";
+$waDeliveryMsg = "Hello Furusato Japanese Restaurant,\n\nI would like to enquire about delivery.\n\nThank you.";
 
 // Get review count from reservations data for schema
 $reservations = getJsonData('reservations');
@@ -162,8 +168,8 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <meta name="msapplication-TileColor" content="#0d1b2a">
 
-    <link rel="stylesheet" href="/assets/css/style.css?v=<?= $styleVersion ?>">
-    <link rel="stylesheet" href="/assets/css/animations.css?v=<?= $animationsVersion ?>">
+    <link rel="stylesheet" href="<?= asset_url('assets/css/style.css') . '?v=' . $styleVersion ?>">
+    <link rel="stylesheet" href="<?= asset_url('assets/css/animations.css') . '?v=' . $animationsVersion ?>">
 
     <style>
         /* ============================================================
@@ -1406,8 +1412,8 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
         <div class="delivery-intro reveal">
             <p>Furusato delivers for free for orders over <strong>Ksh 3,000</strong>. For orders under Ksh 3,000 a delivery fee applies — ranging from <strong>Ksh 300 to Ksh 500</strong> depending on distance.</p>
             <p>We are also available on the delivery apps below:</p>
-            <a href="https://wa.me/254722488706?text=Hello%20Furusato!%20I'd%20like%20to%20place%20an%20order." target="_blank" class="d-contact">
-                <i class="fab fa-whatsapp"></i> Call or WhatsApp <strong>0722 488 706</strong> to order
+            <a href="<?= htmlspecialchars(wa_link($waDeliveryMsg)) ?>" target="_blank" rel="noopener noreferrer" class="d-contact">
+                <i class="fab fa-whatsapp"></i> Call or WhatsApp <strong>0722 488 706</strong> to enquire about delivery
             </a>
         </div>
         <div class="delivery-cards-row reveal">
@@ -1490,7 +1496,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
                 <ul class="footer-contact-list">
                     <li class="footer-contact-item"><i class="fas fa-map-marker-alt"></i><span>Ring Road Parklands, Westlands, Nairobi, Kenya</span></li>
                     <li class="footer-contact-item"><i class="fas fa-phone-alt"></i><a href="tel:+254722488706">0722 488 706</a></li>
-                    <li class="footer-contact-item"><i class="fab fa-whatsapp"></i><a href="https://wa.me/254734639203">0734 639 203</a></li>
+                    <li class="footer-contact-item"><i class="fab fa-whatsapp"></i><a href="https://wa.me/<?= htmlspecialchars($restaurantWhatsapp) ?>" target="_blank" rel="noopener noreferrer">0734 639 203</a></li>
                     <li class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:furusatoreservation@gmail.com">furusatoreservation@gmail.com</a></li>
                     <li class="footer-contact-item"><i class="fas fa-clock"></i><span>Daily: 12:00 PM – 9:00 PM</span></li>
                 </ul>
@@ -1503,7 +1509,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
     </div>
 </footer>
 
-<a href="https://wa.me/254734639203?text=Hello%20Furusato!%20I'd%20like%20to%20make%20a%20reservation" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+<a href="<?= htmlspecialchars(wa_link($waReservationMsg)) ?>" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
     <i class="fab fa-whatsapp"></i>
 </a>
 

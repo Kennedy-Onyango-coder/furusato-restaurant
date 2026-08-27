@@ -40,8 +40,8 @@ $contactJsVersion = get_asset_version('assets/js/contact.js');
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css?v=<?= $styleVersion ?>">
-    <link rel="stylesheet" href="/assets/css/animations.css?v=<?= $animationsVersion ?>">
+    <link rel="stylesheet" href="<?= asset_url('assets/css/style.css') . '?v=' . $styleVersion ?>">
+    <link rel="stylesheet" href="<?= asset_url('assets/css/animations.css') . '?v=' . $animationsVersion ?>">
 
     <style>
         /* ============================================================
@@ -1168,7 +1168,18 @@ $contactJsVersion = get_asset_version('assets/js/contact.js');
                 <div class="card-body">
                     <div class="card-label">WhatsApp</div>
                     <div class="card-value">
-                        <a href="https://wa.me/254734639203?text=Hello%20Furusato!%20I'd%20like%20to%20make%20a%20reservation." target="_blank">0734 639 203</a>
+                        <a href="<?= htmlspecialchars(wa_link("Hello Furusato Japanese Restaurant,\n\nI would like to make a reservation.\n\nThank you.")) ?>" target="_blank" rel="noopener noreferrer">0734 639 203</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAYMENT INFORMATION (informational only — no online payment) -->
+            <div class="contact-card reveal">
+                <div class="card-icon"><i class="fas fa-credit-card"></i></div>
+                <div class="card-body">
+                    <div class="card-label">Payment</div>
+                    <div class="card-value" style="font-size: 0.85rem; line-height: 1.6;">
+                        For payment information and available payment methods, please contact our team on WhatsApp or speak with our restaurant staff.
                     </div>
                 </div>
             </div>
@@ -1237,7 +1248,7 @@ $contactJsVersion = get_asset_version('assets/js/contact.js');
                 <div class="delivery-info-block">
                     <div class="delivery-info-row"><i class="fas fa-gift"></i><span><strong>Free delivery</strong> on orders above <strong>Ksh 3,000</strong></span></div>
                     <div class="delivery-info-row"><i class="fas fa-route"></i><span>Delivery fee of <strong>Ksh 300 – 500</strong> applies for orders under Ksh 3,000 (varies by distance)</span></div>
-                    <div class="delivery-info-row delivery-info-cta"><i class="fab fa-whatsapp"></i><span>Call or WhatsApp <a href="https://wa.me/254722488706?text=Hello%20Furusato!%20I'd%20like%20to%20place%20an%20order." target="_blank"><strong>0722 488 706</strong></a> to place an order</span></div>
+                    <div class="delivery-info-row delivery-info-cta"><i class="fab fa-whatsapp"></i><span>Call or WhatsApp <a href="<?= htmlspecialchars(wa_link("Hello Furusato Japanese Restaurant,\n\nI would like to enquire about delivery.\n\nThank you.")) ?>" target="_blank" rel="noopener noreferrer"><strong>0722 488 706</strong></a> to enquire about delivery</span></div>
                 </div>
             </div>
         </div>
@@ -1369,7 +1380,7 @@ $contactJsVersion = get_asset_version('assets/js/contact.js');
                 <ul class="footer-contact-list">
                     <li class="footer-contact-item"><i class="fas fa-map-marker-alt"></i><span>Ring Road Parklands, Westlands, Nairobi</span></li>
                     <li class="footer-contact-item"><i class="fas fa-phone-alt"></i><a href="tel:+254722488706">0722 488 706</a></li>
-                    <li class="footer-contact-item"><i class="fab fa-whatsapp"></i><a href="https://wa.me/254734639203">0734 639 203</a></li>
+<li class="footer-contact-item"><i class="fab fa-whatsapp"></i><a href="https://wa.me/<?= htmlspecialchars(get_whatsapp_number()) ?>" target="_blank" rel="noopener noreferrer">0734 639 203</a></li>
                     <li class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:furusatoreservation@gmail.com">furusatoreservation@gmail.com</a></li>
                     <li class="footer-contact-item"><i class="fas fa-clock"></i><span>Daily: 12:00 PM – 9:00 PM</span></li>
                 </ul>
@@ -1384,7 +1395,7 @@ $contactJsVersion = get_asset_version('assets/js/contact.js');
 </footer>
 
 <!-- WhatsApp Float -->
-<a href="https://wa.me/254734639203?text=Hello%20Furusato!%20I'd%20like%20to%20make%20a%20reservation" class="wa-float" target="_blank" aria-label="Chat on WhatsApp">
+<a href="<?= htmlspecialchars(wa_link("Hello Furusato Japanese Restaurant,\n\nI would like to make a reservation.\n\nThank you.")) ?>" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
     <i class="fab fa-whatsapp"></i>
 </a>
 

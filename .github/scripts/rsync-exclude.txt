@@ -1,0 +1,27 @@
+# rsync exclusions for CODE-ONLY deployment to Hostinger.
+# Anything listed here is NEVER created, updated or deleted on the server by
+# automated deployments. Hostinger remains the source of truth for these.
+#
+# Production data (the JSON "database" and admin-created backups)
+data/
+# Runtime logs
+logs/
+# Production uploads (admin-managed media) - server is source of truth
+assets/images/menu/
+assets/images/hero/
+assets/images/gallery/
+# Git + CI metadata must never land in public_html
+.git/
+.github/
+# Secrets / server-only configuration (lives only on Hostinger)
+.env
+.env.*
+includes/.env.php
+config.local.php
+# Local junk
+*.bak
+*.orig
+Thumbs.db
+.DS_Store
+# Local helper docs/scripts not needed on the server
+_verify_base.php

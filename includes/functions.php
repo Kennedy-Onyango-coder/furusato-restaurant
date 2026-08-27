@@ -22,6 +22,9 @@ if (session_status() === PHP_SESSION_NONE) {
     }
 }
 
+// Central configuration & secret loader (reads env + optional includes/.env.php).
+require_once __DIR__ . '/config.php';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
@@ -582,8 +585,96 @@ function checkRateLimit(string $type, int $maxPerHour = RL_MAX_PER_HOUR): bool
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// WHATSAPP CONFIGURATION (single source of truth)
+// The WhatsApp number is managed via Admin → Settings → WhatsApp and stored
+// in data/settings.json. Never hardcode the number in pages or scripts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get the restaurant's WhatsApp number (digits only, international format).
+ * Supports both legacy flat setting ("whatsapp": "2547...") and the nested
+ * admin structure ("whatsapp": {"phone_number": "+2547..."}).
+ */
+function get_whatsapp_number(): string
+{
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    $settings = readJsonFile(__DIR__ . '/../data/settings.json') ?: [];
+    $number   = '';
+
+    if (!empty($settings['whatsapp'])) {
+        $number = is_array($settings['whatsapp'])
+            ? ($settings['whatsapp']['phone_number'] ?? '')
+            : (string) $settings['whatsapp'];
+    }
+    if ($number === '' && !empty($settings['whatsapp_number'])) {
+        $number = (string) $settings['whatsapp_number'];
+    }
+
+    $number = preg_replace('/[^0-9]/', '', $number);
+    $cached = ($number !== '') ? $number : '254734639203'; // safe fallback
+    return $cached;
+}
+
+/**
+ * Build a wa.me link with a pre-filled message.
+ */
+function wa_link(string $message): string
+{
+    return 'https://wa.me/' . get_whatsapp_number() . '?text=' . rawurlencode($message);
+}
+
+/**
+ * Pre-filled WhatsApp enquiry message for a single menu item.
+ * WhatsApp is an ENQUIRY channel — not an ordering/checkout channel.
+ */
+function menu_enquiry_message(string $itemName, $price = null): string
+{
+    $msg  = "Hello Furusato Japanese Restaurant,\n\n";
+    $msg .= "I would like to enquire about the following menu item:\n\n";
+    $msg .= $itemName;
+    if ($price !== null && $price !== '' && is_numeric($price)) {
+        $msg .= "\nPrice shown on menu: KES " . number_format((float) $price);
+    }
+    $msg .= "\n\nIs this currently available?\n\nThank you.";
+    return $msg;
+}
+
+/**
+ * Pre-filled WhatsApp enquiry message for multiple menu items (My Enquiry).
+ */
+function menu_enquiry_message_multi(array $itemNames): string
+{
+    $msg  = "Hello Furusato Japanese Restaurant,\n\n";
+    $msg .= "I would like to enquire about the following menu items:\n\n";
+    foreach ($itemNames as $name) {
+        $msg .= '- ' . $name . "\n";
+    }
+    $msg .= "\nCould you please confirm availability and provide any relevant information?\n\nThank you.";
+    return $msg;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CACHE BUSTING HELPER
 // ─────────────────────────────────────────────────────────────────────────────
+
+function base_url(): string
+{
+    static $base = null;
+    if ($base !== null) {
+        return $base;
+    }
+
+    // Resolve the app's base path so links work whether the site is hosted at
+    // the domain root (-> '') or inside a sub-folder (-> '/furusato' etc.).
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+    $dir    = str_replace('\\', '/', dirname($script));
+    $base   = ($dir === '/' || $dir === '.' || $dir === '') ? '' : rtrim($dir, '/');
+    return $base;
+}
 
 function get_asset_version($path) {
     $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($path, '/');
@@ -594,8 +685,7 @@ function get_asset_version($path) {
 }
 
 function asset_url($path) {
-    $version = get_asset_version($path);
-    return '/' . ltrim($path, '/') . '?v=' . $version;
+    return base_url() . '/' . ltrim($path, '/');
 }
 
 function addImageCacheBust($imagePath) {

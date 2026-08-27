@@ -1,0 +1,26 @@
+{
+    "lastUpdated": "2026-01-01T00:00:00+00:00",
+    "categories": [
+        {
+            "id": "cat-001",
+            "slug": "example-category",
+            "label": "Example Category",
+            "labelJp": "",
+            "icon": "🍣",
+            "visible": true,
+            "order": 1,
+            "items": [
+                {
+                    "id": "item-example-001",
+                    "name": "Example Dish",
+                    "description": "A sample menu item for template purposes only.",
+                    "price": 100,
+                    "image": "assets/images/menu/placeholder.webp",
+                    "badge": null,
+                    "visible": true,
+                    "order": 1
+                }
+            ]
+        }
+    ]
+}

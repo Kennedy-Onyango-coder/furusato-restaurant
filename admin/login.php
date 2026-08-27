@@ -366,6 +366,9 @@ if (isset($_GET['success'])) {
                 <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn btn-primary" id="loginBtn">Sign In</button>
+            <div style="text-align:center; margin-top:14px;">
+                <a href="#" id="forgotLink" style="color:#C8A96E; text-decoration:none; font-size:12.5px; letter-spacing:0.3px;">Forgot password? Reset password</a>
+            </div>
         </form>
     </div>
 
@@ -383,6 +386,35 @@ if (isset($_GET['success'])) {
             <button type="submit" class="btn btn-primary" id="totpBtn">Verify</button>
         </form>
         <button type="button" class="btn" id="backBtn" style="background: transparent; color: rgba(224,225,221,0.4); margin-top: 8px; font-size: 12px;">Back</button>
+    </div>
+
+    <div class="step" id="resetView" style="display: none;">
+        <div class="step-label">Account recovery</div>
+
+        <form id="forgotForm">
+            <div class="form-group">
+                <label class="form-label" for="resetEmail">Account Email</label>
+                <input type="email" id="resetEmail" class="form-input" placeholder="admin@furusato.com" autocomplete="email" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="forgotBtn">Send Reset Link</button>
+            <p class="step-hint" style="font-size:11px; color:rgba(224,225,221,0.35); margin-top:10px; line-height:1.5;">A one-time reset link for the admin account will be generated. If email delivery is not configured, the link will appear here.</p>
+        </form>
+
+        <div id="resetFormWrap" style="display: none;">
+            <div id="resetNotice" style="display:none; background:rgba(10,185,129,0.12); border:1px solid rgba(10,185,129,0.35); color:#7fe3c4; padding:10px 12px; border-radius:8px; font-size:11.5px; line-height:1.6; margin-bottom:14px; word-break:break-all;"></div>
+            <input type="hidden" id="resetToken">
+            <div class="form-group">
+                <label class="form-label" for="newPassword">New Password</label>
+                <input type="password" id="newPassword" class="form-input" autocomplete="new-password" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" class="form-input" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="resetBtn">Set New Password</button>
+        </div>
+
+        <button type="button" class="btn" id="resetBackBtn" style="background: transparent; color: rgba(224,225,221,0.4); margin-top: 8px; font-size: 12px;">Back to Sign In</button>
     </div>
 
     <div class="login-footer">Furusato Japanese Restaurant &copy; <?= date('Y') ?></div>
@@ -737,6 +769,157 @@ if (isset($_GET['success'])) {
             }
         });
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Forgot / Reset Password
+    // ─────────────────────────────────────────────────────────────────
+    const resetView = document.getElementById('resetView');
+    const forgotForm = document.getElementById('forgotForm');
+    const resetForm = document.getElementById('resetForm');
+    const resetFormWrap = document.getElementById('resetFormWrap');
+    const resetNotice = document.getElementById('resetNotice');
+    const resetTokenInput = document.getElementById('resetToken');
+    const forgotLink = document.getElementById('forgotLink');
+    const resetBackBtn = document.getElementById('resetBackBtn');
+    const forgotBtn = document.getElementById('forgotBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const resetEmailInput = document.getElementById('resetEmail');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const stepIndicatorEl = document.getElementById('stepIndicator');
+    const banner2faEl = document.getElementById('banner2fa');
+
+    function showResetMode(withToken) {
+        step1.classList.remove('active');
+        step2.classList.remove('active');
+        if (stepIndicatorEl) stepIndicatorEl.style.display = 'none';
+        if (banner2faEl) banner2faEl.style.display = 'none';
+        resetView.style.display = 'block';
+        forgotForm.style.display = withToken ? 'none' : 'block';
+        resetFormWrap.style.display = withToken ? 'block' : 'none';
+        if (withToken) {
+            newPasswordInput.focus();
+        } else if (resetEmailInput) {
+            resetEmailInput.focus();
+        }
+    }
+
+    function exitResetMode() {
+        resetView.style.display = 'none';
+        if (stepIndicatorEl) stepIndicatorEl.style.display = '';
+        if (banner2faEl) banner2faEl.style.display = '';
+        step1.classList.add('active');
+        showStep(1);
+    }
+
+    // If opened with ?reset=TOKEN from an emailed reset link
+    const qResetToken = new URLSearchParams(window.location.search).get('reset') || '';
+    if (qResetToken) {
+        resetTokenInput.value = qResetToken;
+        showResetMode(true);
+    }
+
+    if (forgotLink) {
+        forgotLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            hideError();
+            if (resetNotice) { resetNotice.style.display = 'none'; resetNotice.innerHTML = ''; }
+            showResetMode(false);
+        });
+    }
+
+    if (resetBackBtn) {
+        resetBackBtn.addEventListener('click', function() {
+            exitResetMode();
+        });
+    }
+
+    forgotForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideError();
+        const email = resetEmailInput.value.trim();
+        if (!email) {
+            showError('Please enter your account email.');
+            return;
+        }
+        setLoading(forgotBtn, true);
+        try {
+            const result = await apiCall('/api/auth.php?action=forgot_password', {
+                method: 'POST',
+                body: JSON.stringify({ email })
+            });
+            setLoading(forgotBtn, false);
+
+            if (result.data.success) {
+                if (result.data.reset_token) {
+                    resetTokenInput.value = result.data.reset_token;
+                }
+                forgotForm.style.display = 'none';
+                resetFormWrap.style.display = 'block';
+
+                if (resetNotice) {
+                    const link = result.data.reset_url || '';
+                    resetNotice.style.display = 'block';
+                    resetNotice.innerHTML = result.data.email_sent
+                        ? '<strong>Reset link sent.</strong> Check your inbox. You can also use the one-time link below.'
+                        : '<strong>Email not configured.</strong> Use this one-time reset link (valid 1 hour):<br><a style="color:#fff;" href="' + link + '">' + link + '</a>';
+                }
+                newPasswordInput.focus();
+            } else if (result.data.error) {
+                showError(result.data.error);
+            }
+        } catch (err) {
+            setLoading(forgotBtn, false);
+            console.error('Forgot password error:', err);
+            showError(err.message || 'Network error. Please try again.');
+        }
+    });
+
+    resetForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideError();
+
+        const token = resetTokenInput.value.trim();
+        const np = newPasswordInput.value;
+        const cp = confirmPasswordInput.value;
+
+        if (!token) {
+            showError('Reset link is missing. Please request a new one.');
+            return;
+        }
+        if (!np || np.length < 8) {
+            showError('New password must be at least 8 characters.');
+            return;
+        }
+        if (np !== cp) {
+            showError('New passwords do not match.');
+            return;
+        }
+
+        setLoading(resetBtn, true);
+        try {
+            const result = await apiCall('/api/auth.php?action=reset_password', {
+                method: 'POST',
+                body: JSON.stringify({ token, new_password: np, confirm_password: cp })
+            });
+            setLoading(resetBtn, false);
+
+            if (result.data.success) {
+                alert(result.data.message || 'Password reset successfully.');
+                resetForm.reset();
+                if (resetNotice) { resetNotice.style.display = 'none'; resetNotice.innerHTML = ''; }
+                exitResetMode();
+            } else if (result.data.error) {
+                showError(result.data.error);
+            } else {
+                showError('Reset failed. Please try again.');
+            }
+        } catch (err) {
+            setLoading(resetBtn, false);
+            console.error('Reset password error:', err);
+            showError(err.message || 'Network error. Please try again.');
+        }
+    });
 
     if (typeof gsap !== 'undefined') {
         gsap.fromTo('#loginCard', { opacity: 0, y: 30, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out', delay: 0.1 });

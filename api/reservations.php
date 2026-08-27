@@ -17,18 +17,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ============================================================
-// CORS Headers
+// CORS - restricted to the Furusato origin(s) configured in
+// includes/config.php. Never wildcard together with credentials.
 // ============================================================
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-header('Access-Control-Max-Age: 86400');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+require_once __DIR__ . '/../includes/config.php';
+furusato_cors_headers();
 
 error_reporting(0);
 ini_set('display_errors', 0);
@@ -59,7 +52,8 @@ function sendJsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store, no-cache, must-revalidate');
-    header('Access-Control-Allow-Origin: *');
+    // CORS headers were already emitted once at the top of the request
+    // (see furusato_cors_headers() in includes/config.php).
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -249,13 +243,32 @@ function sendWhatsAppReservation($reservation, $isUpdate = false) {
         $settings = json_decode(file_get_contents($settingsFile), true);
     }
     
-    $yourWhatsAppNumber = $settings['whatsapp'] ?? '';
-    $apiKey = $settings['whatsapp_api_key'] ?? '';
-    if (empty($yourWhatsAppNumber) || empty($apiKey)) {
-        error_log('WhatsApp notification skipped: not configured');
-        return false;
+    // WhatsApp number is managed via Admin → Settings → WhatsApp.
+    // Support both legacy flat format and nested admin format.
+    if (isset($settings['whatsapp']) && is_array($settings['whatsapp'])) {
+        $yourWhatsAppNumber = preg_replace('/[^0-9]/', '', $settings['whatsapp']['phone_number'] ?? '');
+        $apiKey = $settings['whatsapp']['api_key'] ?? ($settings['whatsapp_api_key'] ?? '');
+    } else {
+        $yourWhatsAppNumber = preg_replace('/[^0-9]/', '', (string)($settings['whatsapp'] ?? ''));
+        $apiKey = $settings['whatsapp_api_key'] ?? '';
+    }
+    if ($yourWhatsAppNumber === '') {
+        $yourWhatsAppNumber = '254734639203'; // safe fallback
     }
     
+    // Server-side config fallback, then graceful skip when WhatsApp is not
+    // configured anywhere (admin settings or server-side config).
+    if ($apiKey === '') {
+        $apiKey = furusato_whatsapp_api_key();
+    }
+    if ($yourWhatsAppNumber === '') {
+        $yourWhatsAppNumber = furusato_whatsapp_phone();
+    }
+    if ($apiKey === '' || $yourWhatsAppNumber === '') {
+        error_log('WhatsApp notification skipped for reservation ' . ($reservation['id'] ?? '?') . ': WhatsApp is not configured.');
+        return false;
+    }
+
     $submissionTime = date('h:i A');
     $submissionDate = date('l, F j, Y');
     $reservationTimeFormatted = date('h:i A', strtotime($reservation['time']));
@@ -573,7 +586,8 @@ try {
             $id = $input['id'] ?? '';
             $status = $input['status'] ?? '';
             
-            if (!in_array($status, ['pending', 'confirmed', 'cancelled'])) {
+            // Full reservation lifecycle: request → confirmation → visit
+            if (!in_array($status, ['pending', 'confirmed', 'declined', 'cancelled', 'completed', 'no_show'])) {
                 sendError('Invalid status value', 400);
             }
             
@@ -589,6 +603,33 @@ try {
             }
             if ($updated) {
                 saveReservations($reservations);
+                logAudit('RESERVATION_STATUS_UPDATED', "ID: {$id}, Status: {$status}");
+                sendJsonResponse(['success' => true]);
+            } else {
+                sendError('Reservation not found', 404);
+            }
+        }
+        
+        // ============================================================
+        // Add / update internal staff notes on a reservation
+        // ============================================================
+        if ($action === 'update_notes') {
+            $id = $input['id'] ?? '';
+            $notes = trim(substr($input['notes'] ?? '', 0, MAX_NOTES_LENGTH));
+            
+            $reservations = getReservations();
+            $updated = false;
+            foreach ($reservations as &$r) {
+                if ($r['id'] === $id) {
+                    $r['admin_notes'] = htmlspecialchars($notes, ENT_QUOTES, 'UTF-8');
+                    $r['updated'] = date('c');
+                    $updated = true;
+                    break;
+                }
+            }
+            if ($updated) {
+                saveReservations($reservations);
+                logAudit('RESERVATION_NOTES_UPDATED', "ID: {$id}");
                 sendJsonResponse(['success' => true]);
             } else {
                 sendError('Reservation not found', 404);

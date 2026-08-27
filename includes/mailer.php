@@ -3,18 +3,147 @@
  * includes/mailer.php - Furusato Restaurant Email System
  * FIXED: Guaranteed delivery to Gmail (no paid email required)
  * Uses multipart/alternative format with plain text + HTML
+ *
+ * EMAIL DELIVERY STRATEGY:
+ *  1. If authenticated SMTP is configured server-side (SMTP_HOST / SMTP_USER /
+ *     SMTP_PASS via environment or includes/.env.php - see includes/config.php),
+ *     messages are sent over authenticated SMTP from a Furusato-owned address.
+ *  2. Otherwise it falls back to PHP mail() exactly as before, so nothing
+ *     breaks when SMTP has not been configured yet.
+ *
+ * No credentials are ever hardcoded in this file.
  */
+
+require_once __DIR__ . '/config.php';
+
+/**
+ * True when a full SMTP configuration is present in server-side config.
+ */
+function furusato_smtp_configured(): bool
+{
+    return furusato_config('SMTP_HOST') !== null
+        && furusato_config('SMTP_USER') !== null
+        && furusato_config('SMTP_PASS') !== null;
+}
+
+/**
+ * Minimal, dependency-free SMTP client (STARTTLS or implicit SSL, AUTH LOGIN).
+ * Used only when furusato_smtp_configured() is true. Returns false on any
+ * failure so the caller can fall back to PHP mail().
+ */
+function furusato_smtp_send(string $to, string $subject, string $headers, string $body): bool
+{
+    $sock = null;
+    try {
+        $host   = (string) furusato_config('SMTP_HOST');
+        $port   = (int) (furusato_config('SMTP_PORT', 587) ?: 587);
+        $user   = (string) furusato_config('SMTP_USER');
+        $pass   = (string) furusato_config('SMTP_PASS');
+        $secure = strtolower((string) furusato_config('SMTP_SECURE', 'tls')); // tls|ssl|none
+        $from   = (string) furusato_config('SMTP_FROM', 'reservations@furusatorestaurant.com');
+
+        $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host;
+        $sock = @fsockopen($remote, $port, $errno, $errstr, 15);
+        if (!$sock) {
+            error_log("SMTP connect failed to {$host}:{$port}: {$errstr} ({$errno})");
+            return false;
+        }
+        stream_set_timeout($sock, 25);
+
+        $read = function () use ($sock) {
+            $data = '';
+            while (($line = fgets($sock, 515)) !== false) {
+                $data .= $line;
+                if (isset($line[3]) && $line[3] === ' ') {
+                    break;
+                }
+            }
+            return $data;
+        };
+        $cmd = function (string $c) use ($sock, $read) {
+            fwrite($sock, $c . "\r\n");
+            return $read();
+        };
+        $expect = function (int $min, int $max, string $resp, string $what) {
+            $code = (int) substr($resp, 0, 3);
+            if ($code < $min || $code > $max) {
+                throw new RuntimeException("SMTP {$what} failed: " . trim($resp));
+            }
+        };
+
+        $expect(220, 220, $read(), 'greeting');
+        $ehlo = $_SERVER['SERVER_NAME'] ?? 'furusatorestaurant.com';
+        $expect(250, 250, $cmd('EHLO ' . $ehlo), 'EHLO');
+
+        if ($secure === 'tls') {
+            if (!function_exists('stream_socket_enable_crypto')) {
+                throw new RuntimeException('STARTTLS requested but OpenSSL is unavailable');
+            }
+            $expect(220, 220, $cmd('STARTTLS'), 'STARTTLS');
+            if (!stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                throw new RuntimeException('TLS negotiation failed');
+            }
+            $expect(250, 250, $cmd('EHLO ' . $ehlo), 'EHLO after TLS');
+        }
+
+        $expect(300, 399, $cmd('AUTH LOGIN'), 'AUTH LOGIN');
+        $expect(300, 399, $cmd(base64_encode($user)), 'AUTH username');
+        $expect(200, 299, $cmd(base64_encode($pass)), 'AUTH password');
+
+        $expect(200, 299, $cmd("MAIL FROM:<{$from}>"), 'MAIL FROM');
+        $expect(200, 299, $cmd("RCPT TO:<{$to}>"), 'RCPT TO');
+        $expect(300, 399, $cmd('DATA'), 'DATA');
+
+        // Full DATA payload: mail() would add To/Subject itself, raw SMTP must
+        // include them. Dot-stuff leading periods per RFC 5321.
+        $payload = 'To: ' . $to . "\r\n"
+            . 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n"
+            . $headers . "\r\n"
+            . $body . "\r\n.";
+        $payload = preg_replace('/^\./m', '..', $payload);
+
+        $expect(200, 299, $cmd($payload), 'message delivery');
+        $cmd('QUIT');
+        fclose($sock);
+        return true;
+    } catch (Throwable $e) {
+        error_log('SMTP send failed: ' . $e->getMessage());
+        if (is_resource($sock)) {
+            fclose($sock);
+        }
+        return false;
+    }
+}
+
+/**
+ * Dispatch a fully built MIME message (headers + multipart body) via SMTP when
+ * configured, falling back to PHP mail() on any SMTP failure.
+ */
+function furusato_deliver(string $to, string $subject, string $headers, string $message): bool
+{
+    if (furusato_smtp_configured()) {
+        if (furusato_smtp_send($to, $subject, $headers, $message)) {
+            return true;
+        }
+        error_log('SMTP delivery failed for "' . $subject . '" - falling back to PHP mail().');
+    }
+    return @mail($to, $subject, $message, $headers);
+}
 
 function sendReservationEmail($reservationData) {
     // Configuration
     $to = "furusatoreservation@gmail.com";
     $subject = "🆕 New Reservation: " . $reservationData['name'] . " - " . $reservationData['date'];
+
+    // Sender must be a Furusato-owned address (never the customer's address).
+    $fromAddress = (string) furusato_config('SMTP_FROM', 'reservations@furusatorestaurant.com');
+    $fromName    = (string) furusato_config('SMTP_FROM_NAME', 'Furusato Japanese Restaurant');
     
     // ============================================================
     // CRITICAL HEADERS FOR GMAIL DELIVERY
     // ============================================================
     $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "From: reservations@furusatorestaurant.com\r\n";
+    $headers .= "From: " . $fromName . " <" . $fromAddress . ">\r\n";
     $headers .= "Reply-To: " . $reservationData['email'] . "\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
     $headers .= "X-Priority: 1\r\n";
@@ -355,7 +484,7 @@ function sendCustomerConfirmation($reservationData) {
     $message .= $htmlMessage . "\r\n\r\n";
     $message .= "--$boundary--";
     
-    return @mail($to, $subject, $message, $headers);
+    return furusato_deliver($to, $subject, $headers, $message);
 }
 
 /**
@@ -394,6 +523,6 @@ function sendTestEmail($testEmail = "furusatoreservation@gmail.com") {
     $message .= $htmlMessage . "\r\n\r\n";
     $message .= "--$boundary--";
     
-    return @mail($testEmail, $subject, $message, $headers);
+    return furusato_deliver($testEmail, $subject, $headers, $message);
 }
 ?>

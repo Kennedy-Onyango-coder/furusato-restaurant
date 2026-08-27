@@ -1,27 +1,63 @@
-﻿# Sensitive & runtime data - never commit real customer/admin data
-data/admin.json
-data/reservations.json
-data/audit.json
-data/audit.log
-data/email_log.json
-data/login_rate_limits.json
-data/rate_limits*.json
-data/attempts.json
-data/processed_ids.json
+﻿# ===========================================================================
+# Furusato Restaurant - .gitignore
+# GitHub is for CODE. Hostinger is the source of truth for DATA, MEDIA, SECRETS.
+# NEVER commit production data, uploads, logs, credentials or secrets.
+# ===========================================================================
 
-# Logs
+# ---- Production data (Hostinger is source of truth) ----
+data/*.json
+!data/*.example.json
+data/*.json.bak
+data/*.bak
+data/*.log
+data/*.log.*
+data/backups/
+data/backups/*
 logs/*
 !logs/.gitkeep
 
-# Backup files
-*.bak
-*.backup
+# ---- Production uploads (admin-managed media; server is source of truth) ----
+# NEVER deploy or sync these from GitHub - deployments must not touch them.
+assets/images/menu/*
+assets/images/hero/*
+assets/images/gallery/*
+# Exception: static application assets that live inside these folders and are
+# referenced by fixed paths in the source code (seed/design assets, not uploads).
+!assets/images/menu/placeholder.webp
+!assets/images/hero/sushi-bar.jpg
+!assets/images/hero/sushi-hero.webp
+!assets/images/hero/out-furusato.webp
+!assets/images/hero/crafted.jpg
+!assets/images/hero/crafted1.jpg
+!assets/images/hero/hero6.jpg
+!assets/images/hero/team.jpg
+!assets/images/hero/20251119_095152_result.webp
+!assets/images/hero/20251119_100750_result.webp
 
-# OS files
+# ---- Secrets & local configuration ----
+.env
+.env.*
+!.env.example
+includes/.env.php
+config.local.php
+*.pem
+*.key
+*.p12
+
+# ---- Local OS / editor ----
 Thumbs.db
 .DS_Store
 desktop.ini
-
-# Editor files
 .vscode/
 .idea/
+
+# ---- Backups / archives ----
+*.bak
+*.backup
+*.zip
+*.tar.gz
+*.tgz
+
+# ---- Misc runtime ----
+index.zip
+menu.zip

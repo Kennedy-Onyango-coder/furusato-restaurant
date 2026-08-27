@@ -1,0 +1,46 @@
+{
+    "name": "Furusato Japanese Restaurant",
+    "tagline": "Taste That Carries You Home",
+    "about": "Authentic Japanese cuisine, open daily.",
+    "established": 2001,
+    "establishedDate": "1 May 2001",
+    "phone": "+254 700 000 000",
+    "phone1": "0700 000 000",
+    "phone2": "0700 000 001",
+    "whatsapp": "254700000000",
+    "email": "reservations@example.com",
+    "address": "Example Location, Nairobi, Kenya",
+    "hours": "12:00 PM - 9:00 PM",
+    "days": "Monday - Sunday",
+
+    "smtpHost": "smtp.example.com",
+    "smtpPort": 587,
+    "smtpUser": "reservations@example.com",
+    "smtpPass": "YOUR_SMTP_PASSWORD_HERE",
+    "smtpFrom": "reservations@example.com",
+    "smtpFromName": "Furusato Japanese Restaurant",
+
+    "delivery": {
+        "uberEats": "",
+        "glovo": "",
+        "minFreeDelivery": 3000,
+        "deliveryContribution": 400,
+        "deliveryFeeMin": 300,
+        "deliveryFeeMax": 500
+    },
+
+    "social": {
+        "instagram": "furusato_japanese_restaurant",
+        "instagramUrl": "https://www.instagram.com/furusato_japanese_restaurant",
+        "facebook": ""
+    },
+
+    "restaurant": {
+        "name": "Example Restaurant",
+        "phone": "+254 700 000 000",
+        "email": "reservations@example.com",
+        "address": "Example Location, Nairobi, Kenya"
+    },
+
+    "last_updated": "1970-01-01T00:00:00+00:00"
+}

@@ -1,0 +1,99 @@
+name: Deploy to Hostinger (production)
+
+# ============================================================
+# PRODUCTION DEPLOYMENT — code only.
+#
+# What this workflow deliberately does NOT touch on the server:
+#   data/            (menu, settings, hero, specials, admin, reservations,
+#                     audit, rate limits, backups — the production "database")
+#   logs/            (runtime logs)
+#   assets/images/menu/ | hero/ | gallery/   (admin-uploaded media)
+#   includes/.env.php (production secrets file, exists only on the server)
+#
+# Deployments only ever run from main. See DEPLOYMENT.md.
+# ============================================================
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # allows a manual run from the GitHub Actions tab
+
+# Never run two production deployments at the same time. A newer push
+# cancels an older in-flight run instead of interleaving file changes.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate (lint, secrets, safety)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the secret scan can grep it
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: PHP syntax check (all PHP files)
+        run: bash .github/scripts/php-lint.sh
+
+      - name: Security scan (old leaked WhatsApp key + secret patterns)
+        run: bash .github/scripts/secret-scan.sh
+
+      - name: Verify production data files are not tracked/deployed
+        run: bash .github/scripts/deploy-safety.sh
+
+  deploy:
+    name: Deploy code to Hostinger
+    needs: validate
+    runs-on: ubuntu-latest
+    # Skips gracefully (does not fail) when the Hostinger SSH secrets have not
+    # been configured yet, so pushes remain green until deployment is switched on.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.HOSTINGER_PORT || 22 }}" -H "${{ secrets.HOSTINGER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Show rsync dry-run (code only, data excluded)
+        run: |
+          rsync -azc --dry-run --itemize-changes \
+            -e "ssh -p ${{ secrets.HOSTINGER_PORT || 22 }}" \
+            --exclude-from=.github/scripts/rsync-exclude.txt \
+            ./ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_DEPLOY_PATH }}/"
+
+      - name: Backup production data + uploads on the server
+        run: |
+          ssh -p "${{ secrets.HOSTINGER_PORT || 22 }}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
+            "bash -s" < .github/scripts/backup-production.sh \
+            "${{ secrets.HOSTINGER_DEPLOY_PATH }}"
+
+      - name: Deploy (rsync code only)
+        # -c checksum mode: only changed files are transferred.
+        # NO --delete: production data/uploads can never be removed by a deploy.
+        # Exclusions are enforced twice: --exclude-from here AND deploy-safety.sh
+        # in the validate job scans the payload before we ever reach this step.
+        run: |
+          rsync -azc --itemize-changes \
+            -e "ssh -p ${{ secrets.HOSTINGER_PORT || 22 }}" \
+            --exclude-from=.github/scripts/rsync-exclude.txt \
+            ./ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_DEPLOY_PATH }}/"
+
+      - name: Post-deployment verification
+        run: |
+          ssh -p "${{ secrets.HOSTINGER_PORT || 22 }}" "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
+            "bash -s" < .github/scripts/verify-production.sh \
+            "${{ secrets.HOSTINGER_DEPLOY_PATH }}"

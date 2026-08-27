@@ -50,11 +50,19 @@
      Cache Busting Helper - Add timestamp to image URLs
      ---------------------------------------------------------- */
   function addImageCacheBust(url) {
+    // Return a STABLE url. The server already provides the correct
+    // /v=<filemtime> via the `image_url` field, and the browser/service worker
+    // cache on it. Never append a fresh Date.now() here: doing so gives every
+    // image a brand-new URL on each render, which defeats caching and makes
+    // menu images re-download (and flicker in/out) on every page load.
     if (!url) return url;
     if (url.startsWith('data:')) return url;
     if (url.startsWith('http') && !url.includes(window.location.hostname)) return url;
-    var cleanUrl = url.split('?')[0];
-    return cleanUrl + '?v=' + Date.now();
+    var clean = url.split('?')[0];
+    if (clean.indexOf('://') === -1 && clean.charAt(0) !== '/') {
+      return '/' + clean;
+    }
+    return clean;
   }
 
   /* ----------------------------------------------------------
@@ -69,7 +77,9 @@
       if (cat.items) {
         cat.items.forEach(function(item) {
           if (item.image && !item.image.includes('placeholder')) {
-            item.image_cache = addImageCacheBust(item.image);
+            // Prefer the server-provided stable URL (has /v=<filemtime> and a
+            // leading slash). Falls back to the raw path if it is missing.
+            item.image_cache = item.image_url || addImageCacheBust(item.image);
           }
         });
       }
@@ -78,7 +88,7 @@
           if (sub.items) {
             sub.items.forEach(function(item) {
               if (item.image && !item.image.includes('placeholder')) {
-                item.image_cache = addImageCacheBust(item.image);
+                item.image_cache = item.image_url || addImageCacheBust(item.image);
               }
             });
           }
@@ -556,9 +566,182 @@
       });
     }
 
+    bindEnquiryButtons();
+
     requestAnimationFrame(function () {
       revealCards();
     });
+  }
+
+  /* ----------------------------------------------------------
+     My Enquiry — temporary list of items to ask about.
+     This is NOT a shopping cart: no totals, no checkout,
+     no payment. It only pre-fills a WhatsApp enquiry message.
+     ---------------------------------------------------------- */
+  var ENQUIRY_KEY = "furusato_my_enquiry";
+
+  function enquiryLoad() {
+    try {
+      return JSON.parse(localStorage.getItem(ENQUIRY_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function enquirySave(items) {
+    try {
+      localStorage.setItem(ENQUIRY_KEY, JSON.stringify(items));
+    } catch (e) {}
+  }
+
+  function enquiryBuildMessage(items) {
+    var msg =
+      "Hello Furusato Japanese Restaurant,\n\n" +
+      "I would like to enquire about the following menu items:\n\n";
+    for (var i = 0; i < items.length; i++) {
+      msg += "- " + items[i].name + "\n";
+    }
+    msg +=
+      "\nCould you please confirm availability and provide any relevant information?\n\nThank you.";
+    return msg;
+  }
+
+  function bindEnquiryButtons() {
+    var bar = document.getElementById("enquiry-bar");
+    if (!bar) return;
+
+    var countEl = document.getElementById("enquiry-count");
+    var listEl = document.getElementById("enquiry-items");
+    var sendLink = document.getElementById("enquiry-send-link");
+    var panelSend = document.getElementById("enquiry-panel-send");
+
+    function syncButtons() {
+      var names = {};
+      var items = enquiryLoad();
+      for (var i = 0; i < items.length; i++) names[items[i].name] = true;
+      var btns = document.querySelectorAll(".menu-item-card__enquire-add");
+      for (var j = 0; j < btns.length; j++) {
+        var n = btns[j].getAttribute("data-enquiry-name") || "";
+        if (names[n]) {
+          btns[j].classList.add("added");
+          btns[j].textContent = "\u2713 In My Enquiry";
+        } else {
+          btns[j].classList.remove("added");
+          btns[j].textContent = "+ My Enquiry";
+        }
+      }
+    }
+
+    function render() {
+      var items = enquiryLoad();
+      if (countEl) countEl.textContent = items.length;
+      bar.style.display = items.length > 0 ? "flex" : "none";
+
+      if (listEl) {
+        listEl.innerHTML = "";
+        if (items.length === 0) {
+          var li = document.createElement("li");
+          li.className = "enquiry-empty";
+          li.style.borderBottom = "none";
+          li.textContent =
+            'Your enquiry list is empty. Tap "+ My Enquiry" on any menu item.';
+          listEl.appendChild(li);
+        } else {
+          for (var k = 0; k < items.length; k++) {
+            (function (idx) {
+              var it = items[idx];
+              var li2 = document.createElement("li");
+              var nameSpan = document.createElement("span");
+              nameSpan.textContent = it.name;
+              li2.appendChild(nameSpan);
+              if (it.price) {
+                var priceSpan = document.createElement("span");
+                priceSpan.className = "enquiry-item-price";
+                priceSpan.textContent =
+                  "KES " + Number(it.price).toLocaleString();
+                li2.appendChild(priceSpan);
+              }
+              var rm = document.createElement("button");
+              rm.type = "button";
+              rm.setAttribute("aria-label", "Remove " + it.name);
+              rm.innerHTML = "&times;";
+              rm.addEventListener("click", function () {
+                var cur = enquiryLoad();
+                cur.splice(idx, 1);
+                enquirySave(cur);
+                syncButtons();
+                render();
+              });
+              li2.appendChild(rm);
+              listEl.appendChild(li2);
+            })(k);
+          }
+        }
+      }
+
+      var href =
+        items.length > 0
+          ? "https://wa.me/" +
+            getWhatsAppNumber() +
+            "?text=" +
+            encodeURIComponent(enquiryBuildMessage(items))
+          : "#";
+      if (sendLink) sendLink.setAttribute("href", href);
+      if (panelSend) panelSend.setAttribute("href", href);
+    }
+
+    var addBtns = document.querySelectorAll(".menu-item-card__enquire-add");
+    for (var i = 0; i < addBtns.length; i++) {
+      addBtns[i].addEventListener("click", function () {
+        var name = this.getAttribute("data-enquiry-name") || "";
+        var price = this.getAttribute("data-enquiry-price") || "";
+        var items = enquiryLoad();
+        var exists = false;
+        for (var x = 0; x < items.length; x++) {
+          if (items[x].name === name) {
+            exists = true;
+            break;
+          }
+        }
+        if (exists) {
+          items = items.filter(function (it) {
+            return it.name !== name;
+          });
+        } else {
+          items.push({ name: name, price: price });
+        }
+        enquirySave(items);
+        syncButtons();
+        render();
+      });
+    }
+
+    var viewBtn = document.getElementById("enquiry-view-btn");
+    var panel = document.getElementById("enquiry-panel");
+    var closeBtn = document.getElementById("enquiry-close-btn");
+    var clearBtn = document.getElementById("enquiry-clear-btn");
+    if (viewBtn && panel) {
+      viewBtn.addEventListener("click", function () {
+        panel.style.display =
+          panel.style.display === "none" ? "block" : "none";
+      });
+    }
+    if (closeBtn && panel) {
+      closeBtn.addEventListener("click", function () {
+        panel.style.display = "none";
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        enquirySave([]);
+        syncButtons();
+        render();
+        if (panel) panel.style.display = "none";
+      });
+    }
+
+    syncButtons();
+    render();
   }
 
   /* ----------------------------------------------------------
@@ -658,11 +841,14 @@
 
       var whatsappNum = getWhatsAppNumber();
       var waMessage = encodeURIComponent(
-        "Hi, I'd like to order: " +
+        "Hello Furusato Japanese Restaurant team! 👋\n\n" +
+          "I would love to place an order for the following item:\n\n" +
+          "🍽️ " +
           item.name +
-          " (Ksh " +
+          "\nPrice shown on menu: Ksh " +
           formatPrice(displayPrice) +
-          ")",
+          "\n\nWould it be possible for me to order this item with you, please?\n" +
+          "I'm really looking forward to enjoying it — thank you kindly! 🙏",
       );
       html +=
         '<a class="menu-item-card__whatsapp" ' +
@@ -673,8 +859,19 @@
         '" ' +
         'target="_blank" rel="noopener noreferrer">' +
         SVG_WHATSAPP +
-        " Order" +
+        " Order via WhatsApp" +
         "</a>";
+      html +=
+        '<button type="button" class="menu-item-card__enquire-add" ' +
+        'data-enquiry-name="' +
+        escAttr(item.name) +
+        '" ' +
+        'data-enquiry-price="' +
+        escAttr(String(item.price || "")) +
+        '" ' +
+        'aria-label="Add ' +
+        escAttr(item.name) +
+        ' to My Enquiry">+ My Enquiry</button>';
 
       html += "</div>";
       html += "</div>";
@@ -859,7 +1056,17 @@
   }
 
   function getWhatsAppNumber() {
-    if (settingsData && settingsData.whatsapp) return settingsData.whatsapp;
+    // Single source of truth: Admin → Settings → WhatsApp (api/settings.php)
+    if (
+      settingsData &&
+      settingsData.whatsapp &&
+      settingsData.whatsapp.phone_number
+    ) {
+      return String(settingsData.whatsapp.phone_number).replace(/[^0-9]/g, "");
+    }
+    if (settingsData && typeof settingsData.whatsapp === "string") {
+      return settingsData.whatsapp.replace(/[^0-9]/g, "");
+    }
     return "254734639203";
   }
 

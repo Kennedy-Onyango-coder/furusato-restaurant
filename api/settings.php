@@ -10,19 +10,12 @@
  * - Input validation and sanitization
  */
 
-/// ============================================================
-// CORS Headers - Allow from ANY device worldwide
 // ============================================================
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-Requested-With');
-header('Access-Control-Max-Age: 86400');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+// CORS - restricted to the Furusato origin(s) configured in
+// includes/config.php. Never wildcard together with credentials.
+// ============================================================
+require_once __DIR__ . '/../includes/config.php';
+furusato_cors_headers();
 
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -72,7 +65,7 @@ function getSettings() {
             ],
             'whatsapp' => [
                 'api_key' => '',
-                'phone_number' => ''
+                'phone_number' => '+254734639203'
             ],
             'last_updated' => date('c')
         ];
@@ -93,7 +86,7 @@ function getSettings() {
         ];
     }
     if (!isset($data['whatsapp'])) {
-        $data['whatsapp'] = ['api_key' => '', 'phone_number' => ''];
+        $data['whatsapp'] = ['api_key' => '', 'phone_number' => '+254734639203'];
     }
     
     return $data;
@@ -260,8 +253,8 @@ function testWhatsAppMessage($apiKey, $phoneNumber) {
 
 function sendSettingsResponse($data, $code = 200) {
     http_response_code($code);
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Credentials: true');
+    // CORS headers were already emitted once at the top of the request
+    // (see furusato_cors_headers() in includes/config.php).
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -380,7 +373,11 @@ if ($method === 'POST') {
                 if (!empty($apiKey) && !preg_match('/^[0-9]+$/', $apiKey)) {
                     sendSettingsResponse(['success' => false, 'error' => 'Invalid API key format. Must contain only numbers.'], 400);
                 }
-                $settings['whatsapp']['api_key'] = $apiKey;
+                // Blank input means "keep the existing key" - the stored key is
+                // never rendered back into the dashboard HTML, so blank ≠ delete.
+                if ($apiKey !== '') {
+                    $settings['whatsapp']['api_key'] = $apiKey;
+                }
                 $changes[] = 'api_key';
             }
             
@@ -405,6 +402,21 @@ if ($method === 'POST') {
     if ($action === 'test_whatsapp') {
         $apiKey = sanitizeSetting($input['api_key'] ?? '', MAX_API_KEY_LENGTH);
         $phoneNumber = sanitizeSetting($input['phone_number'] ?? '', MAX_PHONE_LENGTH);
+        
+        // Blank fields fall back to the stored production settings and then to
+        // the server-side configuration (the stored key is never echoed back).
+        if (empty($apiKey) || empty($phoneNumber)) {
+            $stored = getSettings();
+            if (empty($apiKey)) {
+                $apiKey = (string) ($stored['whatsapp']['api_key'] ?? '');
+                if ($apiKey === '') {
+                    $apiKey = furusato_whatsapp_api_key();
+                }
+            }
+            if (empty($phoneNumber)) {
+                $phoneNumber = (string) ($stored['whatsapp']['phone_number'] ?? '');
+            }
+        }
         
         if (empty($apiKey) || empty($phoneNumber)) {
             sendSettingsResponse(['success' => false, 'error' => 'API key and phone number are required'], 400);

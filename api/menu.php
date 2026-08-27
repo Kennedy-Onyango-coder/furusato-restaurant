@@ -12,19 +12,12 @@
  */
 
 // ============================================================
-// CORS Headers - Allow from ANY device worldwide
+// CORS - restricted to the Furusato origin(s) configured in
+// includes/config.php. Never wildcard together with credentials.
+// Handles the OPTIONS preflight automatically.
 // ============================================================
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-Requested-With');
-header('Access-Control-Max-Age: 86400');
-
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+require_once __DIR__ . '/../includes/config.php';
+furusato_cors_headers();
 
 // Enable error logging
 ini_set('log_errors', 1);
@@ -57,8 +50,8 @@ const RATE_LIMIT_MENU_API = 120;  // 120 requests per hour
 
 function sendJson($data, $code = 200) {
     http_response_code($code);
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Credentials: true');
+    // CORS headers were already emitted once at the top of the request
+    // (see furusato_cors_headers() in includes/config.php).
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
 }
@@ -92,6 +85,18 @@ function checkAdminSession() {
 
 // Rate limiting for API
 function checkMenuApiRateLimit() {
+    // Authenticated admins are trusted ops users — never rate-limit their
+    // menu reads. The admin dashboard re-fetches the whole menu on every
+    // "edit" and after every save, so treating it like public traffic would
+    // quickly exhaust the per-IP budget and lock the admin out with
+    // "Too many requests". Public GETs below remain rate-limited.
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+        return true;
+    }
+
     $ip = getClientIP();
     $rateFile = __DIR__ . '/../data/rate_limits_menu.json';
     
@@ -209,14 +214,29 @@ function secureUploadMenuItemImage($file) {
     return ['success' => false, 'error' => 'Failed to save file'];
 }
 
+// Sanitize menu text for storage.
+// IMPORTANT: We store PLAIN TEXT (not HTML entities). The front-end escapes
+// with escHtml()/escapeHtml() at render time. Applying htmlspecialchars here
+// previously stored "&amp;" which then got escaped again on the client
+// ("&amp;amp;") and re-accumulated on every save/edit.
+function sanitizeText($value): string
+{
+    $value = trim((string)$value);
+    // Strip any HTML tags to prevent markup injection into text fields.
+    $value = strip_tags($value);
+    // Remove null bytes and control characters (but keep normal punctuation).
+    $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $value);
+    return $value;
+}
+
 // Sanitize input data
 function sanitizeMenuItem($data) {
     return [
-        'name' => substr(trim(htmlspecialchars($data['name'] ?? '', ENT_QUOTES, 'UTF-8')), 0, MAX_NAME_LENGTH),
-        'description' => substr(trim(htmlspecialchars($data['description'] ?? '', ENT_QUOTES, 'UTF-8')), 0, MAX_DESCRIPTION_LENGTH),
+        'name' => substr(sanitizeText($data['name'] ?? ''), 0, MAX_NAME_LENGTH),
+        'description' => substr(sanitizeText($data['description'] ?? ''), 0, MAX_DESCRIPTION_LENGTH),
         'price' => isset($data['price']) ? max(0, floatval($data['price'])) : 0,
         'original_price' => isset($data['original_price']) ? max(0, floatval($data['original_price'])) : null,
-        'badge' => isset($data['badge']) ? substr(trim(htmlspecialchars($data['badge'], ENT_QUOTES, 'UTF-8')), 0, 50) : null,
+        'badge' => isset($data['badge']) ? substr(sanitizeText($data['badge']), 0, 50) : null,
     ];
 }
 
@@ -598,9 +618,9 @@ try {
         // CREATE CATEGORY
         // ============================================================
         if ($action === 'create_category') {
-            $label = isset($_POST['label']) ? substr(trim(htmlspecialchars($_POST['label'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $labelJp = isset($_POST['labelJp']) ? substr(trim(htmlspecialchars($_POST['labelJp'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $icon = isset($_POST['icon']) ? substr(trim(htmlspecialchars($_POST['icon'], ENT_QUOTES, 'UTF-8')), 0, 10) : '📋';
+            $label = isset($_POST['label']) ? substr(sanitizeText($_POST['label']), 0, 50) : '';
+            $labelJp = isset($_POST['labelJp']) ? substr(sanitizeText($_POST['labelJp']), 0, 50) : '';
+            $icon = isset($_POST['icon']) ? substr(sanitizeText($_POST['icon']), 0, 10) : '📋';
             $visible = isset($_POST['visible']) ? filter_var($_POST['visible'], FILTER_VALIDATE_BOOLEAN) : true;
             
             if (empty($label)) {
@@ -646,9 +666,9 @@ try {
         // ============================================================
         if ($action === 'edit_category') {
             $categoryId = isset($_POST['category_id']) ? sanitize($_POST['category_id']) : '';
-            $label = isset($_POST['label']) ? substr(trim(htmlspecialchars($_POST['label'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $labelJp = isset($_POST['labelJp']) ? substr(trim(htmlspecialchars($_POST['labelJp'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $icon = isset($_POST['icon']) ? substr(trim(htmlspecialchars($_POST['icon'], ENT_QUOTES, 'UTF-8')), 0, 10) : '';
+            $label = isset($_POST['label']) ? substr(sanitizeText($_POST['label']), 0, 50) : '';
+            $labelJp = isset($_POST['labelJp']) ? substr(sanitizeText($_POST['labelJp']), 0, 50) : '';
+            $icon = isset($_POST['icon']) ? substr(sanitizeText($_POST['icon']), 0, 10) : '';
             $visible = isset($_POST['visible']) ? filter_var($_POST['visible'], FILTER_VALIDATE_BOOLEAN) : true;
             
             if (empty($categoryId) || empty($label)) {
@@ -728,9 +748,9 @@ try {
         // ============================================================
         if ($action === 'create_subcategory') {
             $parentId = isset($_POST['parent_id']) ? sanitize($_POST['parent_id']) : '';
-            $label = isset($_POST['label']) ? substr(trim(htmlspecialchars($_POST['label'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $labelJp = isset($_POST['labelJp']) ? substr(trim(htmlspecialchars($_POST['labelJp'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $icon = isset($_POST['icon']) ? substr(trim(htmlspecialchars($_POST['icon'], ENT_QUOTES, 'UTF-8')), 0, 10) : '';
+            $label = isset($_POST['label']) ? substr(sanitizeText($_POST['label']), 0, 50) : '';
+            $labelJp = isset($_POST['labelJp']) ? substr(sanitizeText($_POST['labelJp']), 0, 50) : '';
+            $icon = isset($_POST['icon']) ? substr(sanitizeText($_POST['icon']), 0, 10) : '';
             
             if (empty($parentId) || empty($label)) {
                 sendError('Parent category and subcategory label are required', 400);
@@ -792,9 +812,9 @@ try {
         // ============================================================
         if ($action === 'edit_subcategory') {
             $subcategoryId = isset($_POST['subcategory_id']) ? sanitize($_POST['subcategory_id']) : '';
-            $label = isset($_POST['label']) ? substr(trim(htmlspecialchars($_POST['label'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $labelJp = isset($_POST['labelJp']) ? substr(trim(htmlspecialchars($_POST['labelJp'], ENT_QUOTES, 'UTF-8')), 0, 50) : '';
-            $icon = isset($_POST['icon']) ? substr(trim(htmlspecialchars($_POST['icon'], ENT_QUOTES, 'UTF-8')), 0, 10) : '';
+            $label = isset($_POST['label']) ? substr(sanitizeText($_POST['label']), 0, 50) : '';
+            $labelJp = isset($_POST['labelJp']) ? substr(sanitizeText($_POST['labelJp']), 0, 50) : '';
+            $icon = isset($_POST['icon']) ? substr(sanitizeText($_POST['icon']), 0, 10) : '';
             $visible = isset($_POST['visible']) ? filter_var($_POST['visible'], FILTER_VALIDATE_BOOLEAN) : true;
             
             if (empty($subcategoryId) || empty($label)) {

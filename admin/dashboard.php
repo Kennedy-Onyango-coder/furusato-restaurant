@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * admin/dashboard.php - Furusato Admin Dashboard
  * FULLY FUNCTIONAL VERSION
@@ -39,7 +39,7 @@ if ($menu && isset($menu['categories'])) {
             'id'     => $cat['id'],
             'label'  => $cat['label'],
             'slug'   => $cat['slug'] ?? '',
-            'icon'   => $cat['icon'] ?? 'ðŸ“‹',
+            'icon'   => $cat['icon'] ?? '📋',
             'visible'=> $cat['visible'] ?? true,
             'order'  => $cat['order'] ?? 999,
             'subcats'=> $cat['subcategories'] ?? []
@@ -58,7 +58,7 @@ $settings = getJsonData('settings');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-  <title>Furusato Admin â€” Dashboard</title>
+  <title>Furusato Admin — Dashboard</title>
   <link rel="icon" type="image/png" href="/assets/images/furusato-logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -240,6 +240,9 @@ $settings = getJsonData('settings');
     .status-pending-modern { background: rgba(245,158,11,0.12); color: var(--warning); }
     .status-confirmed-modern { background: rgba(16,185,129,0.12); color: var(--success); }
     .status-cancelled-modern { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .status-declined-modern { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .status-completed-modern { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .status-no_show-modern { background: rgba(107,114,128,0.15); color: var(--gray-600); }
     .reservation-details-modern { display: flex; flex-wrap: wrap; gap: 32px; padding: 20px 24px; background: white; border-bottom: 1px solid var(--gray-100); }
     .reservation-detail-modern { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--gray-700); }
     .reservation-detail-modern i { width: 20px; color: var(--accent); font-size: 0.9rem; }
@@ -301,10 +304,10 @@ $settings = getJsonData('settings');
     <div class="top-header"><h1 class="page-title" id="main-title">Menu Management</h1></div>
     
     <div class="stats-grid" id="stats-container">
-      <div class="stat-card"><div class="stat-header"><span>Total Categories</span><i class="fas fa-tags"></i></div><div class="stat-value" id="stat-categories">â€”</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Subcategories</span><i class="fas fa-folder-open"></i></div><div class="stat-value" id="stat-subcategories">â€”</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Menu Items</span><i class="fas fa-hamburger"></i></div><div class="stat-value" id="stat-items">â€”</div></div>
-      <div class="stat-card"><div class="stat-header"><span>Popular Dishes</span><i class="fas fa-star"></i></div><div class="stat-value" id="stat-popular">â€”</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Total Categories</span><i class="fas fa-tags"></i></div><div class="stat-value" id="stat-categories">—</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Subcategories</span><i class="fas fa-folder-open"></i></div><div class="stat-value" id="stat-subcategories">—</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Menu Items</span><i class="fas fa-hamburger"></i></div><div class="stat-value" id="stat-items">—</div></div>
+      <div class="stat-card"><div class="stat-header"><span>Popular Dishes</span><i class="fas fa-star"></i></div><div class="stat-value" id="stat-popular">—</div></div>
     </div>
     
     <div class="toolbar" id="menu-toolbar">
@@ -326,7 +329,10 @@ $settings = getJsonData('settings');
         <button class="btn btn-outline btn-sm filter-status" data-status="all">All</button>
         <button class="btn btn-outline btn-sm filter-status" data-status="pending">Pending</button>
         <button class="btn btn-outline btn-sm filter-status" data-status="confirmed">Confirmed</button>
+        <button class="btn btn-outline btn-sm filter-status" data-status="declined">Declined</button>
         <button class="btn btn-outline btn-sm filter-status" data-status="cancelled">Cancelled</button>
+        <button class="btn btn-outline btn-sm filter-status" data-status="completed">Completed</button>
+        <button class="btn btn-outline btn-sm filter-status" data-status="no_show">No-show</button>
       </div>
     </div>
     
@@ -354,14 +360,14 @@ $settings = getJsonData('settings');
         <div class="form-actions"><button type="submit" class="btn-modern btn-primary-modern"><i class="fas fa-save"></i> Save Restaurant Settings</button></div></form></div></div>
 
         <div class="settings-card"><div class="settings-card-header"><div class="settings-card-icon"><i class="fab fa-whatsapp"></i></div><div class="settings-card-title"><h3>WhatsApp Integration</h3><p>Configure WhatsApp notifications for reservations</p></div></div>
-        <div class="settings-card-body"><form id="whatsapp-settings-form" class="settings-form"><div class="form-group-modern"><label class="form-label-modern"><i class="fas fa-key"></i> CallMeBot API Key</label><input type="text" id="whatsapp-api-key" class="form-input-modern" value="" placeholder="Enter your CallMeBot API key"><div class="info-box"><i class="fas fa-info-circle"></i> Get your API key by sending "I allow callmebot to send me messages" to +34 666 66 74 26 on WhatsApp</div></div>
+        <div class="settings-card-body"><form id="whatsapp-settings-form" class="settings-form"><div class="form-group-modern"><label class="form-label-modern"><i class="fas fa-key"></i> CallMeBot API Key</label><input type="text" id="whatsapp-api-key" class="form-input-modern" value="" placeholder="Saved securely on the server — enter a new key only to replace it" autocomplete="off"><div class="info-box"><i class="fas fa-info-circle"></i> Get your API key by sending "I allow callmebot to send me messages" to +34 666 66 74 26 on WhatsApp</div></div>
         <div class="form-actions-group"><button type="button" class="btn-modern btn-outline-modern" onclick="testWhatsApp()"><i class="fab fa-whatsapp"></i> Send Test Message</button><button type="submit" class="btn-modern btn-primary-modern"><i class="fas fa-save"></i> Save WhatsApp Settings</button></div></form></div></div>
       </div>
     </div>
   </main>
 </div>
 
-<div id="session-warning" class="session-modal"><span>âš ï¸ Your session will expire in <span id="session-timer">5:00</span></span><button onclick="extendSession()">Stay Logged In</button></div>
+<div id="session-warning" class="session-modal"><span>⚠️ Your session will expire in <span id="session-timer">5:00</span></span><button onclick="extendSession()">Stay Logged In</button></div>
 
 <!-- Modals -->
 <div class="modal" id="item-modal"><div class="modal-content"><div class="modal-header"><h3 id="item-modal-title">Add Menu Item</h3><button class="modal-close" onclick="closeModal('item-modal')"><i class="fas fa-times"></i></button></div>
@@ -372,19 +378,19 @@ $settings = getJsonData('settings');
 <div class="form-group"><label class="form-label">Description</label><textarea id="item-description" name="description" class="form-textarea" rows="3"></textarea></div>
 <div class="form-row"><div class="form-group"><label class="form-label">Current Price (KES) *</label><input type="number" id="item-price" name="price" class="form-input" required min="0" step="50"></div>
 <div class="form-group"><label class="form-label">Original Price (KES)</label><input type="number" id="item-original-price" name="original_price" class="form-input" min="0" step="50" placeholder="Leave empty if no discount"></div></div>
-<div class="popular-toggle"><input type="checkbox" id="item-popular" name="is_popular" value="1"><label for="item-popular">ðŸŒŸ Mark as Popular Dish</label><input type="hidden" id="item-badge" name="badge" value=""></div>
+<div class="popular-toggle"><input type="checkbox" id="item-popular" name="is_popular" value="1"><label for="item-popular">🌟 Mark as Popular Dish</label><input type="hidden" id="item-badge" name="badge" value=""></div>
 <div class="form-group"><label class="form-label">Item Image</label><div class="upload-zone" id="upload-zone"><i class="fas fa-cloud-upload-alt" style="font-size: 1.5rem; color: var(--gray-400);"></i><p style="margin-top: 8px; font-size: 0.8rem; color: var(--gray-500);">Click or drag to upload image</p></div><input type="file" id="item-image" name="image" accept="image/*" style="display:none;"><div class="image-preview" id="image-preview" style="display:none; margin-top: 12px;"><img id="preview-img" src="" alt="Preview" style="width: 60px; height: 60px; border-radius: var(--radius); object-fit: cover;"><button type="button" class="btn btn-outline btn-sm" onclick="clearImage()">Remove</button></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('item-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Item</button></div></form></div></div>
 
 <div class="modal" id="category-modal"><div class="modal-content"><div class="modal-header"><h3 id="category-modal-title">Add Category</h3><button class="modal-close" onclick="closeModal('category-modal')"><i class="fas fa-times"></i></button></div>
 <form id="category-form"><div class="modal-body"><input type="hidden" id="category-id" name="category_id"><div class="form-group"><label class="form-label">Category Name *</label><input type="text" id="category-name" name="label" class="form-input" required></div><div class="form-group"><label class="form-label">Japanese Name</label><input type="text" id="category-jp" name="labelJp" class="form-input"></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="category-icon" name="icon" class="form-input" placeholder="ðŸ£"></div><div class="form-group"><label class="form-label">Visible</label><select id="category-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="category-icon" name="icon" class="form-input" placeholder="🍣"></div><div class="form-group"><label class="form-label">Visible</label><select id="category-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('category-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Category</button></div></form></div></div>
 
 <div class="modal" id="subcategory-modal"><div class="modal-content"><div class="modal-header"><h3 id="subcategory-modal-title">Add Subcategory</h3><button class="modal-close" onclick="closeModal('subcategory-modal')"><i class="fas fa-times"></i></button></div>
 <form id="subcategory-form"><div class="modal-body"><input type="hidden" id="subcategory-id" name="subcategory_id"><div class="form-group"><label class="form-label">Parent Category *</label><select id="subcategory-parent" name="parent_id" class="form-select" required><option value="">Select category</option><?php foreach ($categories as $cat): ?><option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['label']) ?></option><?php endforeach; ?></select></div>
 <div class="form-group"><label class="form-label">Subcategory Name *</label><input type="text" id="subcategory-label" name="label" class="form-input" required></div><div class="form-group"><label class="form-label">Japanese Name</label><input type="text" id="subcategory-jp" name="labelJp" class="form-input"></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="subcategory-icon" name="icon" class="form-input" placeholder="ðŸ¥—"></div><div class="form-group"><label class="form-label">Visible</label><select id="subcategory-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" id="subcategory-icon" name="icon" class="form-input" placeholder="🥗"></div><div class="form-group"><label class="form-label">Visible</label><select id="subcategory-visible" name="visible" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeModal('subcategory-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Subcategory</button></div></form></div></div>
 
 <div class="modal" id="delete-modal"><div class="modal-content" style="max-width: 400px;"><div class="modal-header"><h3>Confirm Delete</h3><button class="modal-close" onclick="closeModal('delete-modal')"><i class="fas fa-times"></i></button></div>
@@ -401,7 +407,7 @@ $settings = getJsonData('settings');
 <div class="modal" id="backup-modal"><div class="modal-content" style="max-width: 600px;"><div class="modal-header"><h3>Backup & Restore</h3><button class="modal-close" onclick="closeModal('backup-modal')"><i class="fas fa-times"></i></button></div>
 <div class="modal-body"><div style="margin-bottom: 24px;"><h4>Create Backup</h4><button class="btn btn-primary" onclick="createBackup()"><i class="fas fa-database"></i> Create New Backup</button></div>
 <div style="margin-bottom: 24px;"><h4>Export Menu</h4><button class="btn btn-outline" onclick="exportMenu()"><i class="fas fa-download"></i> Download Menu JSON</button></div>
-<div style="margin-bottom: 24px;"><h4>Import Menu</h4><input type="file" id="import-file" accept=".json" style="display:none;" onchange="importMenu(this)"><button class="btn btn-outline" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Import JSON File</button><p class="form-hint">âš ï¸ Import will overwrite current menu. A backup will be created automatically.</p></div>
+<div style="margin-bottom: 24px;"><h4>Import Menu</h4><input type="file" id="import-file" accept=".json" style="display:none;" onchange="importMenu(this)"><button class="btn btn-outline" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Import JSON File</button><p class="form-hint">⚠️ Import will overwrite current menu. A backup will be created automatically.</p></div>
 <div><h4>Available Backups</h4><div id="backups-list" style="max-height: 300px; overflow-y: auto;"></div></div></div>
 <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('backup-modal')">Close</button></div></div></div>
 
@@ -581,12 +587,12 @@ function renderMenu(categories) {
     for (let c = 0; c < categories.length; c++) {
         const cat = categories[c], items = cat.items || [], subcats = cat.subcategories || [];
         let totalSubItems = 0; for (let s = 0; s < subcats.length; s++) totalSubItems += (subcats[s].items || []).length;
-        html += '<div class="category-card" data-category-id="' + cat.id + '"><div class="category-header" draggable="true" data-cat-id="' + cat.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="category-icon">' + (cat.icon || 'ðŸ“‹') + '</span><span class="category-name">' + escapeHtml(cat.label) + '</span><span class="category-badge">' + (items.length + totalSubItems) + ' items</span><div class="category-actions"><button class="action-btn" onclick="editCategory(\'' + cat.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-danger" onclick="deleteCategory(\'' + cat.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+        html += '<div class="category-card" data-category-id="' + cat.id + '"><div class="category-header" draggable="true" data-cat-id="' + cat.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="category-icon">' + (cat.icon || '📋') + '</span><span class="category-name">' + escapeHtml(cat.label) + '</span><span class="category-badge">' + (items.length + totalSubItems) + ' items</span><div class="category-actions"><button class="action-btn" onclick="editCategory(\'' + cat.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-danger" onclick="deleteCategory(\'' + cat.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
         if (subcats.length > 0) {
             html += '<div class="subcategories-list" data-cat-id="' + cat.id + '">';
             for (let s = 0; s < subcats.length; s++) {
                 const sub = subcats[s];
-                html += '<div class="subcategory-item" draggable="true" data-sub-id="' + sub.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="subcategory-icon">' + (sub.icon || 'ðŸ“') + '</span><span class="subcategory-name">' + escapeHtml(sub.label) + '</span><span class="subcategory-badge">' + ((sub.items || []).length) + ' items</span><div class="subcategory-actions"><button class="action-btn action-btn-sm" onclick="editSubcategory(\'' + sub.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-sm action-btn-danger" onclick="deleteSubcategory(\'' + sub.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+                html += '<div class="subcategory-item" draggable="true" data-sub-id="' + sub.id + '"><i class="fas fa-grip-vertical drag-handle" style="cursor: grab; color: #9ca3af; margin-right: 8px;"></i><span class="subcategory-icon">' + (sub.icon || '📁') + '</span><span class="subcategory-name">' + escapeHtml(sub.label) + '</span><span class="subcategory-badge">' + ((sub.items || []).length) + ' items</span><div class="subcategory-actions"><button class="action-btn action-btn-sm" onclick="editSubcategory(\'' + sub.id + '\')"><i class="fas fa-edit"></i> Edit</button><button class="action-btn action-btn-sm action-btn-danger" onclick="deleteSubcategory(\'' + sub.id + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
             }
             html += '</div>';
         }
@@ -673,10 +679,9 @@ document.getElementById('category-form')?.addEventListener('submit', async funct
     formData.append('action', action);
     try {
         const response = await fetch('/api/menu.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
-        const data = await response.json();
-        if (data.success) { closeModal('category-modal'); loadMenu(); loadStats(); showToast('Category saved'); }
-        else showToast(data.error || 'Failed', 'error');
-    } catch (error) { showToast('Network error', 'error'); }
+        await parseApiResponse(response);
+        closeModal('category-modal'); loadMenu(); loadStats(); showToast('Category saved');
+    } catch (error) { showToast(error.message || 'Network error', 'error'); }
 });
 
 // Subcategory Form Submit
@@ -687,10 +692,9 @@ document.getElementById('subcategory-form')?.addEventListener('submit', async fu
     formData.append('action', action);
     try {
         const response = await fetch('/api/menu.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
-        const data = await response.json();
-        if (data.success) { closeModal('subcategory-modal'); loadMenu(); loadStats(); showToast('Subcategory saved'); }
-        else showToast(data.error || 'Failed', 'error');
-    } catch (error) { showToast('Network error', 'error'); }
+        await parseApiResponse(response);
+        closeModal('subcategory-modal'); loadMenu(); loadStats(); showToast('Subcategory saved');
+    } catch (error) { showToast(error.message || 'Network error', 'error'); }
 });
 
 // Item Form Submit
@@ -703,10 +707,9 @@ document.getElementById('item-form')?.addEventListener('submit', async function(
     formData.append('action', action);
     try {
         const response = await fetch('/api/menu.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
-        const data = await response.json();
-        if (data.success) { closeModal('item-modal'); loadMenu(); loadStats(); showToast('Item saved'); }
-        else showToast(data.error || 'Failed', 'error');
-    } catch (error) { showToast('Network error', 'error'); }
+        await parseApiResponse(response);
+        closeModal('item-modal'); loadMenu(); loadStats(); showToast('Item saved');
+    } catch (error) { showToast(error.message || 'Network error', 'error'); }
 });
 
 // Delete Functions
@@ -723,17 +726,46 @@ document.getElementById('confirm-delete')?.addEventListener('click', async funct
     else if (type === 'subcategory') { formData.append('action', 'delete_subcategory'); formData.append('subcategory_id', id); }
     try {
         const response = await fetch('/api/menu.php', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: formData });
-        const data = await response.json();
-        if (data.success) { closeModal('delete-modal'); loadMenu(); loadStats(); showToast('Deleted'); }
-        else showToast(data.error || 'Delete failed', 'error');
-    } catch (error) { showToast('Network error', 'error'); }
+        await parseApiResponse(response);
+        closeModal('delete-modal'); loadMenu(); loadStats(); showToast('Deleted');
+    } catch (error) { showToast(error.message || 'Network error', 'error'); }
 });
 
 // Edit Functions
+async function parseApiResponse(response) {
+    let data = null;
+    try { data = await response.json(); }
+    catch (err) { data = null; }
+    if (!response.ok) {
+        throw new Error((data && data.error) || ('HTTP ' + response.status));
+    }
+    if (!data || data.success !== true) {
+        throw new Error((data && data.error) || 'Request failed');
+    }
+    return data;
+}
+
+async function menuApiGet() {
+    const response = await fetch('/api/menu.php?v=' + Date.now(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    });
+    if (!response.ok) {
+        let msg = 'HTTP ' + response.status;
+        try { const e = await response.json(); msg = e.error || msg; } catch (err) {}
+        throw new Error(msg);
+    }
+    const data = await response.json();
+    if (!data || !Array.isArray(data.categories)) {
+        throw new Error('Menu data is not available.');
+    }
+    return data;
+}
+
 window.editCategory = async function(id) {
     try {
-        const response = await fetch('/api/menu.php?v=' + Date.now());
-        const data = await response.json();
+        const data = await menuApiGet();
         const category = data.categories.find(function(c) { return c.id === id; });
         if (category) {
             document.getElementById('category-modal-title').textContent = 'Edit Category';
@@ -744,13 +776,12 @@ window.editCategory = async function(id) {
             document.getElementById('category-visible').value = category.visible !== false ? 'true' : 'false';
             openModal('category-modal');
         }
-    } catch (error) { showToast('Failed to load category', 'error'); }
+    } catch (error) { showToast('Failed to load category: ' + error.message, 'error'); }
 };
 
 window.editSubcategory = async function(id) {
     try {
-        const response = await fetch('/api/menu.php?v=' + Date.now());
-        const data = await response.json();
+        const data = await menuApiGet();
         for (let c = 0; c < data.categories.length; c++) {
             const sub = data.categories[c].subcategories?.find(function(s) { return s.id === id; });
             if (sub) {
@@ -765,13 +796,12 @@ window.editSubcategory = async function(id) {
                 break;
             }
         }
-    } catch (error) { showToast('Failed to load subcategory', 'error'); }
+    } catch (error) { showToast('Failed to load subcategory: ' + error.message, 'error'); }
 };
 
 window.editItem = async function(id) {
     try {
-        const response = await fetch('/api/menu.php?v=' + Date.now());
-        const data = await response.json();
+        const data = await menuApiGet();
         for (let c = 0; c < data.categories.length; c++) {
             const cat = data.categories[c];
             for (let i = 0; i < (cat.items || []).length; i++) {
@@ -792,7 +822,8 @@ window.editItem = async function(id) {
                 }
             }
         }
-    } catch (error) { showToast('Failed to load item', 'error'); }
+        showToast('Item not found', 'error');
+    } catch (error) { showToast('Failed to load item: ' + error.message, 'error'); }
 };
 
 function populateEditForm(item, categoryId, subcategoryId) {
@@ -930,18 +961,50 @@ function renderReservations(reservations) {
     let html = '<div class="reservations-container-modern">';
     for (let r = 0; r < reservations.length; r++) {
         const res = reservations[r];
-        const statusClass = safeString(res.status) === 'confirmed' ? 'status-confirmed-modern' : (safeString(res.status) === 'cancelled' ? 'status-cancelled-modern' : 'status-pending-modern');
-        const statusText = safeString(res.status) ? safeString(res.status).charAt(0).toUpperCase() + safeString(res.status).slice(1) : 'Pending';
-        const guestName = safeString(res.name, 'Unknown'), guestEmail = safeString(res.email, 'No email'), guestPhone = safeString(res.phone, 'N/A'), guestTime = safeString(res.time, 'N/A'), guestCount = safeString(res.guests || res.party || '1'), reservationId = safeString(res.id), specialRequests = safeString(res.special_requests || res.notes, ''), guestInitial = guestName !== 'Unknown' ? guestName.charAt(0).toUpperCase() : '?';
+        const st = safeString(res.status, 'pending');
+        const statusClassMap = { pending: 'status-pending-modern', confirmed: 'status-confirmed-modern', declined: 'status-declined-modern', cancelled: 'status-cancelled-modern', completed: 'status-completed-modern', no_show: 'status-no_show-modern' };
+        const statusLabelMap = { pending: 'Pending', confirmed: 'Confirmed', declined: 'Declined', cancelled: 'Cancelled', completed: 'Completed', no_show: 'No-show' };
+        const statusClass = statusClassMap[st] || 'status-pending-modern';
+        const statusText = statusLabelMap[st] || st.charAt(0).toUpperCase() + st.slice(1);
+        const guestName = safeString(res.name, 'Unknown'), guestEmail = safeString(res.email, 'No email'), guestPhone = safeString(res.phone, 'N/A'), guestTime = safeString(res.time, 'N/A'), guestCount = safeString(res.guests || res.party || '1'), reservationId = safeString(res.id), specialRequests = safeString(res.special_requests || res.notes, ''), adminNotes = safeString(res.admin_notes, ''), guestInitial = guestName !== 'Unknown' ? guestName.charAt(0).toUpperCase() : '?';
         let formattedDate = safeString(res.date);
         try { const dateObj = new Date(res.date); if (!isNaN(dateObj.getTime())) { formattedDate = dateObj.toLocaleDateString('en-KE', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }); } } catch(e) { }
+        // Confirm via WhatsApp — communication channel only (no payment involved)
+        const waConfirmMsg = 'Hello ' + guestName + ',\n\nThis is Furusato Japanese Restaurant confirming your table reservation.\n\nDate: ' + formattedDate + '\nTime: ' + guestTime + '\nGuests: ' + guestCount + '\n\nWe look forward to welcoming you.\n\nFurusato Japanese Restaurant';
+        const waConfirmHref = 'https://wa.me/' + String(guestPhone).replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent(waConfirmMsg);
         html += '<div class="reservation-card-modern" data-reservation-id="' + escapeHtml(reservationId) + '"><div class="reservation-header-modern"><div class="reservation-guest-modern"><div class="reservation-avatar-modern">' + escapeHtml(guestInitial) + '</div><div class="reservation-info-modern"><h4>' + escapeHtml(guestName) + '</h4><p><i class="fas fa-envelope"></i> ' + escapeHtml(guestEmail) + '</p></div></div><div class="reservation-status-modern ' + statusClass + '">' + escapeHtml(statusText) + '</div></div><div class="reservation-details-modern"><div class="reservation-detail-modern"><i class="fas fa-phone"></i><span><strong>Phone:</strong> ' + escapeHtml(guestPhone) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-calendar"></i><span><strong>Date:</strong> ' + escapeHtml(formattedDate) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-clock"></i><span><strong>Time:</strong> ' + escapeHtml(guestTime) + '</span></div><div class="reservation-detail-modern"><i class="fas fa-users"></i><span><strong>Guests:</strong> ' + escapeHtml(guestCount) + '</span></div><div class="reservation-id-modern"><i class="fas fa-hashtag"></i> ' + escapeHtml(reservationId) + '</div></div>';
         if (specialRequests) { html += '<div class="reservation-requests-modern"><div class="label"><i class="fas fa-pen"></i> Special Requests</div><div class="text">' + escapeHtml(specialRequests) + '</div></div>'; }
-        html += '<div class="reservation-actions-modern"><select class="form-select" style="width: auto; padding: 8px 14px; font-size: 0.75rem;" onchange="updateReservationStatus(\'' + escapeHtml(reservationId) + '\', this.value)"><option value="pending" ' + (safeString(res.status) === 'pending' ? 'selected' : '') + '>â³ Pending</option><option value="confirmed" ' + (safeString(res.status) === 'confirmed' ? 'selected' : '') + '>âœ… Confirmed</option><option value="cancelled" ' + (safeString(res.status) === 'cancelled' ? 'selected' : '') + '>âŒ Cancelled</option></select><button class="action-btn action-btn-danger action-btn-sm" onclick="deleteReservation(\'' + escapeHtml(reservationId) + '\')"><i class="fas fa-trash-alt"></i> Delete</button></div></div>';
+        if (adminNotes) { html += '<div class="reservation-requests-modern"><div class="label"><i class="fas fa-clipboard"></i> Staff Notes</div><div class="text">' + escapeHtml(adminNotes) + '</div></div>'; }
+        html += '<div class="reservation-actions-modern">';
+        html += '<select class="form-select" style="width: auto; padding: 8px 14px; font-size: 0.75rem;" onchange="updateReservationStatus(\'' + escapeHtml(reservationId) + '\', this.value)">';
+        ['pending','confirmed','declined','cancelled','completed','no_show'].forEach(function(s) {
+            html += '<option value="' + s + '" ' + (st === s ? 'selected' : '') + '>' + statusLabelMap[s] + '</option>';
+        });
+        html += '</select>';
+        html += '<a class="action-btn action-btn-sm" href="' + escapeHtml(waConfirmHref) + '" target="_blank" rel="noopener noreferrer" title="Send a WhatsApp confirmation message to the guest (communication only — not payment)"><i class="fab fa-whatsapp"></i> Confirm via WhatsApp</a>';
+        html += '<button class="action-btn action-btn-sm" onclick="editReservationNotes(\'' + escapeHtml(reservationId) + '\')"><i class="fas fa-clipboard"></i> Notes</button>';
+        html += '<button class="action-btn action-btn-danger action-btn-sm" onclick="deleteReservation(\'' + escapeHtml(reservationId) + '\')"><i class="fas fa-trash-alt"></i> Delete</button>';
+        html += '</div></div>';
     }
     html += '</div>';
     if (reservationsContainer) reservationsContainer.innerHTML = html;
 }
+
+window.editReservationNotes = function(id) {
+    const res = currentReservations.find(function(r) { return safeString(r.id) === id; });
+    const currentNotes = res ? safeString(res.admin_notes, '') : '';
+    const notes = prompt('Staff notes for this reservation (internal use only):', currentNotes);
+    if (notes === null) return;
+    saveReservationNotes(id, notes);
+};
+window.saveReservationNotes = async function(id, notes) {
+    try {
+        const response = await fetch('/api/reservations.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ action: 'update_notes', id: id, notes: notes }) });
+        const data = await response.json();
+        if (data.success) { showToast('Notes saved', 'success'); loadReservations(); }
+        else { showToast(data.error || 'Save failed', 'error'); }
+    } catch (error) { showToast('Network error', 'error'); }
+};
 
 window.refreshReservations = function() { loadReservations(); showToast('Reservations refreshed', 'success'); };
 window.debugReservationsAPI = async function() { try { const response = await fetch('/api/reservations.php'); const text = await response.text(); console.log('API Response:', text); alert('API Response received. Check console for details.'); } catch(e) { alert('Error: ' + e.message); } };
@@ -1017,7 +1080,8 @@ document.getElementById('whatsapp-settings-form')?.addEventListener('submit', as
 
 window.testWhatsApp = async function() {
     const apiKey = document.getElementById('whatsapp-api-key').value, phoneNumber = document.getElementById('whatsapp-number').value;
-    if (!apiKey || !phoneNumber) { showToast('Please save WhatsApp settings first', 'error'); return; }
+    // The API key may be left blank to test the key already stored on the server.
+    if (!phoneNumber) { showToast('Please enter the WhatsApp number', 'error'); return; }
     try {
         const response = await fetch('/api/settings.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ action: 'test_whatsapp', api_key: apiKey, phone_number: phoneNumber }) });
         const data = await response.json();

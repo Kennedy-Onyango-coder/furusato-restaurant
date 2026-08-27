@@ -5,18 +5,11 @@
  */
 
 // ============================================================
-// CORS Headers - Allow from ANY device worldwide
+// CORS - restricted to the Furusato origin(s) configured in
+// includes/config.php. Never wildcard together with credentials.
 // ============================================================
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-Requested-With');
-header('Access-Control-Max-Age: 86400');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
+require_once __DIR__ . '/../includes/config.php';
+furusato_cors_headers();
 
 error_reporting(0);
 ini_set('display_errors', 0);
@@ -46,8 +39,8 @@ const RATE_LIMIT_LOGIN = 10;   // 10 attempts per hour
 function authJsonResponse($data, $code = 200) {
     while (ob_get_level()) ob_end_clean();
     http_response_code($code);
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Credentials: true');
+    // CORS headers were already emitted once at the top of the request
+    // (see furusato_cors_headers() in includes/config.php).
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -482,6 +475,141 @@ if ($action === 'disable_2fa') {
     
     logAudit('TOTP_DISABLED', "IP: {$clientIP}");
     authJsonResponse(['success' => true, 'message' => '2FA disabled successfully']);
+}
+
+// Forgot password - request a one-time reset link
+if ($action === 'forgot_password') {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    $email = isset($input['email']) ? trim(substr($input['email'], 0, 100)) : '';
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        sendAuthError('Invalid email format', 400);
+    }
+
+    $admin = getJsonData('admin');
+    $storedEmail = $admin['email'] ?? '';
+
+    // Always respond in the same way so we never leak whether an account exists
+    if ($email !== $storedEmail) {
+        logAudit('FORGOT_PASSWORD_EMAIL_MISMATCH', "IP: {$clientIP}");
+        authJsonResponse(['success' => true, 'message' => 'If a matching account exists, a reset link has been generated and sent.']);
+    }
+
+    // Generate a secure one-time reset token
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
+
+    $resetsFile = __DIR__ . '/../data/password_resets.json';
+    $resets = [];
+    if (file_exists($resetsFile)) {
+        $resets = json_decode(file_get_contents($resetsFile), true) ?: [];
+    }
+    $resets = is_array($resets) ? $resets : [];
+    $resets[$tokenHash] = [
+        'email'   => $storedEmail,
+        'expires' => time() + 3600, // valid for 1 hour
+        'used'    => false,
+    ];
+    file_put_contents($resetsFile, json_encode($resets), LOCK_EX);
+
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443;
+    $host = $_SERVER['HTTP_HOST'] ?? 'furusatorestaurant.com';
+    $resetUrl = ($isHttps ? 'https://' : 'http://') . $host . '/admin/login.php?reset=' . $token;
+
+    logAudit('PASSWORD_RESET_REQUESTED', "Email: {$storedEmail}, IP: {$clientIP}");
+
+    // Attempt to email the reset link (best effort; server SMTP may be unconfigured)
+    $emailSent = false;
+    $subject = 'Furusato Admin - Password Reset';
+    $body  = "Hello,\n\n";
+    $body .= "A password reset was requested for the Furusato Admin account.\n\n";
+    $body .= "To set a new password, open this link (valid for 1 hour):\n{$resetUrl}\n\n";
+    $body .= "If you did not request this, you can safely ignore this email.\n\n";
+    $body .= "Furusato Japanese Restaurant\n";
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $headers .= "From: no-reply@furusatorestaurant.com\r\n";
+    $headers .= "Return-Path: <no-reply@furusatorestaurant.com>\r\n";
+    $emailSent = @mail($storedEmail, $subject, $body, $headers);
+
+    // Return the one-time link/token so the flow works even if email is not configured
+    authJsonResponse([
+        'success'     => true,
+        'reset_token' => $token,
+        'reset_url'   => $resetUrl,
+        'email_sent'  => $emailSent,
+        'message'     => $emailSent
+            ? 'A password reset link has been sent to your email. It is valid for 1 hour.'
+            : 'Email delivery is not configured on this server, so here is your one-time reset link. It is valid for 1 hour.',
+    ]);
+}
+
+// Reset password using a one-time token
+if ($action === 'reset_password') {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    $token = isset($input['token']) ? trim($input['token']) : '';
+    $newPassword = $input['new_password'] ?? '';
+    $confirmPassword = $input['confirm_password'] ?? '';
+
+    if (empty($token) || empty($newPassword) || empty($confirmPassword)) {
+        sendAuthError('All fields are required', 400);
+    }
+
+    if ($newPassword !== $confirmPassword) {
+        sendAuthError('New passwords do not match', 400);
+    }
+
+    if (strlen($newPassword) < 8) {
+        sendAuthError('New password must be at least 8 characters', 400);
+    }
+
+    $resetsFile = __DIR__ . '/../data/password_resets.json';
+    $resets = [];
+    if (file_exists($resetsFile)) {
+        $resets = json_decode(file_get_contents($resetsFile), true) ?: [];
+    }
+    $resets = is_array($resets) ? $resets : [];
+
+    $tokenHash = hash('sha256', $token);
+
+    if (!isset($resets[$tokenHash])) {
+        logAudit('PASSWORD_RESET_INVALID_TOKEN', "IP: {$clientIP}");
+        sendAuthError('Invalid or expired reset link. Please request a new one.', 400);
+    }
+
+    $record = $resets[$tokenHash];
+
+    if (!empty($record['used'])) {
+        sendAuthError('This reset link has already been used. Please request a new one.', 400);
+    }
+
+    if (($record['expires'] ?? 0) < time()) {
+        unset($resets[$tokenHash]);
+        file_put_contents($resetsFile, json_encode($resets), LOCK_EX);
+        sendAuthError('This reset link has expired. Please request a new one.', 400);
+    }
+
+    $admin = getJsonData('admin');
+    if (($record['email'] ?? '') !== ($admin['email'] ?? '')) {
+        sendAuthError('Invalid reset link', 400);
+    }
+
+    $admin['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+    $admin['totpEnabled'] = false;
+    $admin['totpSecret'] = '';
+    $admin['backup_codes'] = [];
+    setJsonData('admin', $admin);
+
+    // Invalidate all outstanding reset tokens
+    file_put_contents($resetsFile, json_encode([]), LOCK_EX);
+
+    logAudit('PASSWORD_RESET_SUCCESS', "IP: {$clientIP}");
+    authJsonResponse(['success' => true, 'message' => 'Password reset successfully. You can now log in with your new password.']);
 }
 
 sendAuthError('Invalid action', 400);
