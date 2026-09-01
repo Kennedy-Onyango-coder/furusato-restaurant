@@ -86,6 +86,7 @@ function furusato_merged_config($reload = false)
         'SMTP_PASS',
         'SMTP_FROM',
         'SMTP_FROM_NAME',
+        'SMTP_SECURE',
 
         'FURUSATO_SECRET_KEY',
         'SESSION_HANDLER',
