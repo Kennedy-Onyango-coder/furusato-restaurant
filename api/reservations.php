@@ -1,16 +1,26 @@
 <?php
 /**
  * api/reservations.php - Furusato Restaurant Reservations API
- * 
- * SIMPLIFIED DUPLICATE CHECK:
- * - Only checks for EXACT same name + email + phone + date + time on the SAME DAY
- * - ANY change (different name, email, phone, date, or time) = NEW reservation
- * - No time window restriction - works for any past/future reservations
- * - Edit existing reservation support
+ *
+ * SECURITY HARDENED:
+ *  - CSRF required for every state-changing request (POST/PUT).
+ *  - Summary listing is admin-only; customers can only look up their OWN
+ *    reservation with id + verification token (narrow, non-sensitive fields).
+ *  - Customer edits require: reservation id + verification token + CSRF.
+ *  - Strict input validation (date YYYY-MM-DD, time HH:MM, guests 1-50).
+ *  - Atomic JSON persistence with advisory file locking (no lost duplicate
+ *    checks, no torn reads during concurrent writes).
+ *  - Enforcing per-IP rate limits for public writes (429), separate from
+ *    authenticated admin operations which are never rate limited.
+ *  - Notifications run only AFTER a successful save and never break the save.
+ *
+ * Notification + email logic is delegated to includes/whatsapp.php and
+ * includes/mailer.php (centralised helpers). This file contains no secrets
+ * and no hardcoded recipient phone numbers.
  */
 
 // ============================================================
-// START SESSION - Required for admin functions only
+// START SESSION - required for CSRF tokens and admin functions
 // ============================================================
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -19,6 +29,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // ============================================================
 // CORS - restricted to the Furusato origin(s) configured in
 // includes/config.php. Never wildcard together with credentials.
+// OPTIONS pre-flight is answered here with HTTP 204 and exits.
 // ============================================================
 require_once __DIR__ . '/../includes/config.php';
 furusato_cors_headers();
@@ -32,19 +43,31 @@ ob_start();
 
 date_default_timezone_set('Africa/Nairobi');
 
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/mailer.php';
+require_once __DIR__ . '/../includes/whatsapp.php';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const RATE_LIMIT_RESERVATIONS = 20;       // Max 20 reservations per IP per hour (soft limit)
-const RATE_LIMIT_WINDOW = 3600;           // 1 hour window
-const MAX_NAME_LENGTH = 100;
-const MAX_EMAIL_LENGTH = 100;
-const MAX_PHONE_LENGTH = 20;
-const MAX_NOTES_LENGTH = 500;
+const RES_RATE_LIMIT_HOURLY      = 20;   // public reservation writes per IP / hour
+const RES_RATE_LIMIT_HOURLY_WINDOW = 3600;
+const RES_RATE_LIMIT_BURST       = 8;    // public reservation writes per IP / 2 minutes (blocks scripted flurries)
+const RES_RATE_LIMIT_BURST_WINDOW = 120;
+const RES_SOFT_VOLUME_WARN       = 15;   // start warning above this many writes / hour
+
+const RES_MAX_NAME_LENGTH   = 100;
+const RES_MAX_EMAIL_LENGTH  = 100;
+const RES_MAX_PHONE_LENGTH  = 20;
+const RES_MAX_NOTES_LENGTH  = 500;
+const RES_GUESTS_MIN        = 1;
+const RES_GUESTS_MAX        = 50;
+const RES_PENDING_EDIT_TTL  = 1800;   // 30 minutes for the temporary duplicate-edit token
+const RES_STATUSES          = ['pending', 'confirmed', 'declined', 'cancelled', 'completed', 'no_show'];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper Functions
+// JSON Response Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 function sendJsonResponse($data, $statusCode = 200) {
@@ -52,292 +75,419 @@ function sendJsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store, no-cache, must-revalidate');
-    // CORS headers were already emitted once at the top of the request
-    // (see furusato_cors_headers() in includes/config.php).
+    if ($statusCode === 429) {
+        $retryAfter = (int) ($data['data']['retry_after'] ?? 60);
+        header('Retry-After: ' . max(1, $retryAfter));
+    }
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 function sendError($message, $statusCode = 400) {
-    sendJsonResponse(['success' => false, 'error' => $message], $statusCode);
+    $payload = ['success' => false, 'error' => $message];
+    // Let the frontend refresh its in-page token after a CSRF failure.
+    if ($statusCode === 403 && isset($_SESSION['csrf_token'])) {
+        $payload['csrf_token'] = $_SESSION['csrf_token'];
+    }
+    sendJsonResponse($payload, $statusCode);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rate Limiting - SOFT LIMIT (warns but does NOT block)
+// Rate limiting - public reservation writes only
+// Separate from admin operations: authenticated admins are never rate limited.
+// Uses the safest client-IP source for the Hostinger deployment (REMOTE_ADDR
+// via getClientIP()); never trusts client-supplied X-Forwarded-For headers.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function checkRateLimit($ip, $limit = RATE_LIMIT_RESERVATIONS, $window = RATE_LIMIT_WINDOW) {
-    $rateFile = __DIR__ . '/../data/rate_limits_reservations.json';
-    $data = [];
-    
-    $dataDir = __DIR__ . '/../data';
-    if (!is_dir($dataDir)) {
-        @mkdir($dataDir, 0755, true);
+function reservationRateLimitHit(string $ip, int $limit, int $window): array {
+    $file = __DIR__ . '/../data/rate_limits_reservations.json';
+    $dir  = dirname($file);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
     }
-    
-    if (file_exists($rateFile)) {
-        $content = file_get_contents($rateFile);
-        $data = json_decode($content, true) ?: [];
-    }
-    
+
+    $key = md5($ip . ':reservation:' . $window);
     $now = time();
-    $key = md5($ip);
-    
-    if (isset($data[$key])) {
-        $data[$key] = array_filter($data[$key], function($ts) use ($now, $window) {
-            return ($now - $ts) < $window;
-        });
-        $data[$key] = array_values($data[$key]);
-    } else {
-        $data[$key] = [];
+
+    $fp = @fopen($file, 'c+');
+    if ($fp === false) {
+        error_log('Reservation rate-limit file could not be opened; request allowed.');
+        return ['allowed' => true, 'count' => 0, 'limit' => $limit, 'retry_after' => 0];
     }
-    
-    $attemptCount = count($data[$key]);
-    
-    // SOFT LIMIT: Just track and warn, but NEVER block
-    $data[$key][] = $now;
-    file_put_contents($rateFile, json_encode($data), LOCK_EX);
-    
-    $isHighVolume = ($attemptCount + 1) >= $limit;
-    
+    if (!flock($fp, LOCK_EX)) {
+        fclose($fp);
+        error_log('Reservation rate-limit lock could not be acquired; request allowed.');
+        return ['allowed' => true, 'count' => 0, 'limit' => $limit, 'retry_after' => 0];
+    }
+
+    $raw  = stream_get_contents($fp);
+    $data = (is_string($raw) && $raw !== '') ? json_decode($raw, true) : null;
+    if (!is_array($data)) {
+        $data = [];
+    }
+
+    $bucket = isset($data[$key]) && is_array($data[$key]) ? $data[$key] : [];
+    $bucket = array_values(array_filter($bucket, function ($ts) use ($now, $window) {
+        return ($now - (int) $ts) < $window;
+    }));
+
+    $allowed = count($bucket) < $limit;
+    if ($allowed) {
+        $bucket[] = $now;
+        $data[$key] = $bucket;
+        $json = json_encode($data);
+        if ($json !== false) {
+            rewind($fp);
+            ftruncate($fp, 0);
+            fwrite($fp, $json);
+            fflush($fp);
+        }
+    }
+
+    $retryAfter = 0;
+    if (!$allowed && count($bucket) > 0) {
+        $oldest = (int) $bucket[0];
+        $retryAfter = max(1, ($oldest + $window) - $now);
+    }
+
+    flock($fp, LOCK_UN);
+    fclose($fp);
+
     return [
-        'allowed' => true,
-        'is_high_volume' => $isHighVolume,
-        'count' => $attemptCount + 1,
-        'limit' => $limit
+        'allowed' => $allowed,
+        'count' => count($bucket) + 1,
+        'limit' => $limit,
+        'retry_after' => $retryAfter,
     ];
 }
 
+function enforcePublicReservationRateLimit(string $ip): array {
+    $hourly = reservationRateLimitHit($ip, RES_RATE_LIMIT_HOURLY, RES_RATE_LIMIT_HOURLY_WINDOW);
+    $burst  = reservationRateLimitHit($ip, RES_RATE_LIMIT_BURST, RES_RATE_LIMIT_BURST_WINDOW);
+
+    if (!$hourly['allowed']) {
+        return ['allowed' => false, 'retry_after' => $hourly['retry_after'], 'count' => $hourly['count'], 'limit' => $hourly['limit']];
+    }
+    if (!$burst['allowed']) {
+        return ['allowed' => false, 'retry_after' => $burst['retry_after'], 'count' => $burst['count'], 'limit' => $burst['limit']];
+    }
+
+    return ['allowed' => true, 'count' => $burst['count'], 'limit' => $burst['limit'], 'is_high_volume' => ($hourly['count'] >= RES_SOFT_VOLUME_WARN)];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// IP Blocklist Check
+// IP Blocklist Check (server-managed)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function isIpBlocked($ip) {
+function isIpBlocked(string $ip): bool {
     $blocklistFile = __DIR__ . '/../data/blocklist.json';
-    if (!file_exists($blocklistFile)) return false;
-    
-    $blocklist = json_decode(file_get_contents($blocklistFile), true);
-    if (!is_array($blocklist)) return false;
-    
+    if (!is_file($blocklistFile)) {
+        return false;
+    }
+    $raw = @file_get_contents($blocklistFile);
+    $blocklist = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($blocklist)) {
+        return false;
+    }
+    $now = time();
     foreach ($blocklist as $blocked) {
-        if ($blocked['ip'] === $ip && $blocked['expires'] > time()) {
+        if (is_array($blocked) && ($blocked['ip'] ?? '') === $ip && (int) ($blocked['expires'] ?? 0) > $now) {
             return true;
         }
     }
     return false;
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Admin Session Check
+// Atomic JSON reservation store
+// Every read-check-write (duplicate check + append, or update/delete) runs under
+// a single advisory lock so concurrent requests can never lose updates.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function isAdminAuthenticated() {
-    return isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+function reservationStorePath(): string {
+    return __DIR__ . '/../data/reservations.json';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data Functions
-// ─────────────────────────────────────────────────────────────────────────────
-
-function getReservations() {
-    $file = __DIR__ . '/../data/reservations.json';
-    if (!file_exists($file)) return [];
-    $content = file_get_contents($file);
-    $data = json_decode($content, true);
-    return is_array($data) ? $data : [];
-}
-
-function saveReservations($data) {
-    $file = __DIR__ . '/../data/reservations.json';
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents($file, $json, LOCK_EX) !== false;
-}
-
-function updateReservation($id, $updatedData) {
-    $reservations = getReservations();
-    foreach ($reservations as &$res) {
-        if ($res['id'] === $id) {
-            $res = array_merge($res, $updatedData);
-            $res['updated'] = date('c');
-            saveReservations($reservations);
-            return true;
+function readReservations(): array {
+    $file = reservationStorePath();
+    if (is_file($file)) {
+        $raw = @file_get_contents($file);
+        if (is_string($raw) && $raw !== '') {
+            $data = json_decode($raw, true);
+            if (is_array($data)) {
+                return $data;
+            }
+            error_log('Reservations storage is not valid JSON; treating as empty.');
         }
     }
-    return false;
+    return [];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Validation Functions
-// ─────────────────────────────────────────────────────────────────────────────
-
-function validatePhoneNumber($phone) {
-    $cleaned = preg_replace('/[\s\-\(\)\.]/', '', $phone);
-    
-    if (!preg_match('/^[\+0-9]/', $cleaned)) {
+function persistReservations(string $file, array $reservations): bool {
+    $json = json_encode($reservations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
         return false;
     }
-    
-    $digitsOnly = preg_replace('/[^0-9]/', '', $cleaned);
-    $digitCount = strlen($digitsOnly);
-    
-    if ($digitCount < 8 || $digitCount > 15) {
+    $dir = dirname($file);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $tmp = $dir . '/.tmp_res_' . bin2hex(random_bytes(8)) . '.json';
+    if (@file_put_contents($tmp, $json . "\n", LOCK_EX) === false) {
+        @unlink($tmp);
         return false;
     }
-    
+    @chmod($tmp, 0640);
+    if (!@rename($tmp, $file)) {
+        @unlink($tmp);
+        return false;
+    }
+    @chmod($file, 0640);
     return true;
 }
 
+/**
+ * Run $fn inside an exclusive advisory lock on the reservations store.
+ * $fn receives the freshly-loaded reservation array and must return
+ * [
+ *   'commit' => bool,             // write back the list?
+ *   'list'   => array|null,       // full new reservations array when commit
+ *   'payload'=> mixed,            // result passed back to the caller
+ * ]
+ * The whole read-modify-write is atomic; a concurrent request cannot interleave.
+ *
+ * @throws RuntimeException on lock or persistence failure
+ */
+function withReservationLock(callable $fn) {
+    $dir = __DIR__ . '/../data';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $lockFp = @fopen($dir . '/reservations.lock', 'c');
+    if ($lockFp === false) {
+        throw new RuntimeException('Reservation lock could not be opened');
+    }
+    try {
+        if (!flock($lockFp, LOCK_EX)) {
+            throw new RuntimeException('Reservation lock could not be acquired');
+        }
+        $result = $fn(readReservations());
+        if (!empty($result['commit']) && isset($result['list']) && is_array($result['list'])) {
+            if (!persistReservations(reservationStorePath(), $result['list'])) {
+                throw new RuntimeException('Reservation save failed');
+            }
+        }
+        return $result;
+    } finally {
+        flock($lockFp, LOCK_UN);
+        fclose($lockFp);
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// SIMPLIFIED DUPLICATE CHECK:
-// - Checks for EXACT match: name + email + phone + date + time
-// - NO time window - checks ALL existing reservations
-// - ANY field different = allowed as new reservation
-// - Returns the existing reservation ID if found for editing
+// Reservation validation - shared by creation (POST) and editing (PUT)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function checkDuplicateReservation($reservations, $name, $email, $phone, $date, $time) {
-    $nameNormalized = strtolower(trim($name));
-    $emailNormalized = strtolower(trim($email));
-    $phoneNormalized = preg_replace('/[^0-9]/', '', $phone);
-    
+function validateReservationInput(array $input): array {
+    $errors = [];
+    $data   = [];
+
+    // Name
+    $name = trim((string) ($input['name'] ?? ($input['full_name'] ?? '')));
+    $name = substr($name, 0, RES_MAX_NAME_LENGTH);
+    if ($name === '' || strlen($name) < 2) {
+        $errors[] = 'Full name is required (minimum 2 characters)';
+    }
+    $data['name'] = $name;
+
+    // Email (optional, but must be a real address when supplied)
+    $email = trim((string) ($input['email'] ?? ''));
+    $email = substr($email, 0, RES_MAX_EMAIL_LENGTH);
+    if ($email !== '') {
+        $email = preg_replace('/[\r\n]+/', '', $email); // header-injection safety
+        if (!validateEmail($email)) {
+            $errors[] = 'Please enter a valid email address';
+        }
+    }
+    $data['email'] = $email;
+
+    // Phone
+    $phone = trim((string) ($input['phone'] ?? ($input['phone_number'] ?? '')));
+    $phone = substr($phone, 0, RES_MAX_PHONE_LENGTH);
+    if ($phone === '') {
+        $errors[] = 'Phone number is required';
+    } elseif (!validatePhone($phone)) {
+        $errors[] = 'Please enter a valid phone number with country code (e.g., +254722488706 for Kenya)';
+    }
+    $data['phone'] = $phone;
+
+    // Date - strictly YYYY-MM-DD and a real calendar date; never rely on strtotime()
+    $date = trim((string) ($input['date'] ?? ''));
+    if ($date === '') {
+        $errors[] = 'Date is required';
+    } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        $errors[] = 'Date must be in YYYY-MM-DD format';
+    } else {
+        $parts = array_map('intval', explode('-', $date));
+        if (!checkdate($parts[1], $parts[2], $parts[0]) || $parts[0] < 2000 || $parts[0] > 2100) {
+            $errors[] = 'Please enter a valid date';
+        } elseif ($date < date('Y-m-d')) {
+            $errors[] = 'Date cannot be in the past';
+        }
+    }
+    $data['date'] = $date;
+
+    // Time - strictly HH:MM (24-hour) and within the restaurant business hours
+    $time = trim((string) ($input['time'] ?? ''));
+    if ($time === '') {
+        $errors[] = 'Time is required';
+    } elseif (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
+        $errors[] = 'Time must be in HH:MM 24-hour format';
+    } else {
+        $parts = array_map('intval', explode(':', $time));
+        if ($parts[0] < 12 || $parts[0] > 21 || ($parts[0] === 21 && $parts[1] > 0)) {
+            $errors[] = 'Time must be between 12:00 PM and 9:00 PM (21:00)';
+        }
+    }
+    $data['time'] = $time;
+
+    // Guests
+    $guests = filter_var($input['guests'] ?? ($input['number_of_guests'] ?? ''), FILTER_VALIDATE_INT);
+    if ($guests === false || $guests < RES_GUESTS_MIN || $guests > RES_GUESTS_MAX) {
+        $errors[] = 'Number of guests must be between 1 and 50';
+    }
+    $data['guests'] = (int) $guests;
+
+    // Special requests
+    $notes = trim((string) ($input['special_requests'] ?? ($input['notes'] ?? '')));
+    $notes = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $notes);
+    if (strlen($notes) > RES_MAX_NOTES_LENGTH) {
+        $notes = substr($notes, 0, RES_MAX_NOTES_LENGTH);
+    }
+    $data['special_requests'] = $notes;
+
+    return ['errors' => $errors, 'data' => $data];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Duplicate rule: EXACT same name + email + phone + date + time = duplicate.
+// Any difference (time, date, phone, email or name) = a new reservation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function checkDuplicateReservation(array $reservations, string $name, string $email, string $phone, string $date, string $time): array {
+    $nameNorm  = strtolower(trim($name));
+    $emailNorm = strtolower(trim($email));
+    $phoneNorm = preg_replace('/[^0-9]/', '', $phone);
+
     foreach ($reservations as $existing) {
-        $existingNameNormalized = strtolower(trim($existing['name'] ?? ''));
-        $existingEmailNormalized = strtolower(trim($existing['email'] ?? ''));
-        $existingPhoneNormalized = preg_replace('/[^0-9]/', '', $existing['phone'] ?? '');
-        
-        // Check for EXACT match on ALL fields
-        if ($existingNameNormalized === $nameNormalized && 
-            $existingEmailNormalized === $emailNormalized && 
-            $existingPhoneNormalized === $phoneNormalized && 
-            $existing['date'] === $date &&
-            $existing['time'] === $time) {
-            
-            error_log("Duplicate found: Name={$name}, Email={$email}, Phone={$phone}, Date={$date}, Time={$time}");
+        if (!is_array($existing)) {
+            continue;
+        }
+        $en = strtolower(trim((string) ($existing['name'] ?? '')));
+        $ee = strtolower(trim((string) ($existing['email'] ?? '')));
+        $ep = preg_replace('/[^0-9]/', '', (string) ($existing['phone'] ?? ''));
+
+        if ($en === $nameNorm
+            && $ee === $emailNorm
+            && $ep === $phoneNorm
+            && ($existing['date'] ?? '') === $date
+            && ($existing['time'] ?? '') === $time) {
+            error_log('Duplicate reservation detected for ID: ' . ($existing['id'] ?? '?'));
             return [
                 'is_duplicate' => true,
-                'existing_id' => $existing['id'],
+                'existing_id' => (string) ($existing['id'] ?? ''),
                 'existing_data' => [
-                    'name' => $existing['name'],
-                    'email' => $existing['email'],
-                    'phone' => $existing['phone'],
-                    'date' => $existing['date'],
-                    'time' => $existing['time'],
-                    'guests' => $existing['guests'],
-                    'special_requests' => $existing['special_requests']
-                ]
+                    'name' => $existing['name'] ?? '',
+                    'email' => $existing['email'] ?? '',
+                    'phone' => $existing['phone'] ?? '',
+                    'date' => $existing['date'] ?? '',
+                    'time' => $existing['time'] ?? '',
+                    'guests' => $existing['guests'] ?? 1,
+                    'special_requests' => $existing['special_requests'] ?? '',
+                ],
             ];
         }
     }
-    
+
     return ['is_duplicate' => false];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WhatsApp Notification
+// Reservation ID generation
+// Cryptographically random, prevents collisions against existing records,
+// keeps the human-readable RES-XXXXXXXX format. Never sequential, never a
+// timestamp.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function sendWhatsAppReservation($reservation, $isUpdate = false) {
-    $settingsFile = __DIR__ . '/../data/settings.json';
-    $settings = [];
-    if (file_exists($settingsFile)) {
-        $settings = json_decode(file_get_contents($settingsFile), true);
-    }
-    
-    // WhatsApp number is managed via Admin → Settings → WhatsApp.
-    // Support both legacy flat format and nested admin format.
-    if (isset($settings['whatsapp']) && is_array($settings['whatsapp'])) {
-        $yourWhatsAppNumber = preg_replace('/[^0-9]/', '', $settings['whatsapp']['phone_number'] ?? '');
-        $apiKey = $settings['whatsapp']['api_key'] ?? ($settings['whatsapp_api_key'] ?? '');
-    } else {
-        $yourWhatsAppNumber = preg_replace('/[^0-9]/', '', (string)($settings['whatsapp'] ?? ''));
-        $apiKey = $settings['whatsapp_api_key'] ?? '';
-    }
-    if ($yourWhatsAppNumber === '') {
-        $yourWhatsAppNumber = '254734639203'; // safe fallback
-    }
-    
-    // Server-side config fallback, then graceful skip when WhatsApp is not
-    // configured anywhere (admin settings or server-side config).
-    if ($apiKey === '') {
-        $apiKey = furusato_whatsapp_api_key();
-    }
-    if ($yourWhatsAppNumber === '') {
-        $yourWhatsAppNumber = furusato_whatsapp_phone();
-    }
-    if ($apiKey === '' || $yourWhatsAppNumber === '') {
-        error_log('WhatsApp notification skipped for reservation ' . ($reservation['id'] ?? '?') . ': WhatsApp is not configured.');
-        return false;
-    }
-
-    $submissionTime = date('h:i A');
-    $submissionDate = date('l, F j, Y');
-    $reservationTimeFormatted = date('h:i A', strtotime($reservation['time']));
-    $reservationDateFormatted = date('l, F j, Y', strtotime($reservation['date']));
-    
-    $type = $isUpdate ? "🔄 *RESERVATION UPDATED* 🔄" : "🆕 *FURUSATO RESERVATION* 🆕";
-    
-    $message = $type . "\n\n";
-    $message .= "━━━━━━━━━━━━━━━━━━━━━\n";
-    $message .= "👤 *Guest:* " . $reservation['name'] . "\n";
-    $message .= "📞 *Phone:* " . $reservation['phone'] . "\n";
-    $message .= "━━━━━━━━━━━━━━━━━━━━━\n";
-    $message .= "📅 *Date:* " . $reservationDateFormatted . "\n";
-    $message .= "⏰ *Time:* " . $reservationTimeFormatted . " (Nairobi Time)\n";
-    $message .= "👥 *Party:* " . $reservation['guests'] . " people\n";
-    $message .= "━━━━━━━━━━━━━━━━━━━━━\n";
-    
-    if (!empty($reservation['special_requests'])) {
-        $message .= "📝 *Special Requests:*\n";
-        $message .= "   " . $reservation['special_requests'] . "\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━\n";
-    }
-    
-    $message .= "\n🆔 *Reservation ID:* " . $reservation['id'] . "\n";
-    $message .= "⏱️ *Submitted:* " . $submissionTime . " on " . $submissionDate . " (Nairobi Time)\n\n";
-    $message .= "━━━━━━━━━━━━━━━━━━━━━\n";
-    $message .= "📍 Ring Road Parklands, Westlands, Nairobi\n";
-    $message .= "📞 0722 488 706 | 0734 639 203\n";
-    $message .= "🕐 Open Daily: 12pm - 9pm";
-    
-    $encodedMessage = urlencode($message);
-    $url = "https://api.callmebot.com/whatsapp.php?phone={$yourWhatsAppNumber}&text={$encodedMessage}&apikey={$apiKey}";
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Furusato-Restaurant/1.0');
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return ($httpCode == 200 || strpos($response, 'Message sent') !== false);
+function generateReservationId(array $existingIds): string {
+    do {
+        $id = 'RES-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+    } while (isset($existingIds[$id]));
+    return $id;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Email Notification
+// Response + background notification runner
+// The save ALWAYS happens before this is reached. The JSON response is flushed
+// to the client first; WhatsApp/email are attempted afterwards and any failure
+// is only logged. Notification errors never surface to the customer and never
+// affect the already-saved reservation.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function sendEmail($to, $subject, $htmlBody) {
-    if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) return true;
-    
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: Furusato Restaurant <reservations@furusatorestaurant.com>\r\n";
-    $headers .= "Reply-To: furusatoreservation@gmail.com\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
-    $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
-    
-    return @mail($to, $encodedSubject, $htmlBody, $headers);
+function buildEmailData(array $res): array {
+    return [
+        'name' => (string) ($res['name'] ?? ''),
+        'email' => (string) ($res['email'] ?? ''),
+        'phone' => (string) ($res['phone'] ?? ''),
+        'date' => (string) ($res['date'] ?? ''),
+        'time' => (string) ($res['time'] ?? ''),
+        'guests' => (int) ($res['guests'] ?? 1),
+        'requests' => (string) ($res['special_requests'] ?? ''),
+        'id' => (string) ($res['id'] ?? ''),
+    ];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Generate Secure Reservation ID
-// ─────────────────────────────────────────────────────────────────────────────
+function respondAndNotify(array $responseData, array $reservationsToNotify, bool $isUpdate): void {
+    while (ob_get_level()) ob_end_clean();
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
+    flush();
 
-function generateReservationId() {
-    return 'RES-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+    // Free the session so the customer's next request is not blocked while
+    // notifications run.
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    // Hostinger runs LiteSpeed/PHP-FPM: fastcgi_finish_request() closes the
+    // connection to the browser while this script continues in the background.
+    if (function_exists('fastcgi_finish_request')) {
+        try {
+            fastcgi_finish_request();
+        } catch (Throwable $e) {
+            // best effort only
+        }
+    }
+
+    foreach ($reservationsToNotify as $reservation) {
+        try {
+            sendWhatsAppReservation($reservation, $isUpdate);
+        } catch (Throwable $e) {
+            error_log('WhatsApp notification failed for ' . ($reservation['id'] ?? '?') . ': ' . $e->getMessage());
+        }
+
+        if (!$isUpdate) {
+            try {
+                // Sends the admin notification AND the customer confirmation email.
+                sendReservationEmail(buildEmailData($reservation));
+            } catch (Throwable $e) {
+                error_log('Email notification failed for ' . ($reservation['id'] ?? '?') . ': ' . $e->getMessage());
+            }
+        }
+    }
+
+    exit;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,319 +495,444 @@ function generateReservationId() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 try {
-    $method = $_SERVER['REQUEST_METHOD'];
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($input)) $input = [];
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($input)) {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $rawBody = (string) file_get_contents('php://input');
+    $input   = json_decode($rawBody, true);
+    if (!is_array($input)) {
+        // A body that looks like JSON but fails to parse is a client error (400).
+        // Empty bodies and form-encoded posts (which never start with '{' or '[')
+        // still fall through to the $_POST fallback below.
+        $trimmed = ltrim($rawBody);
+        if ($trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '[')) {
+            sendError('Malformed JSON body', 400);
+        }
+        $input = [];
+    }
+
+    // Support classic form-encoded POSTs as well as JSON bodies.
+    if ($method === 'POST' && empty($input)) {
         $input = $_POST;
     }
-    
-    $clientIP = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $clientIP = trim($ips[0]);
-    }
-    
+
+    $clientIP = getClientIP();
+
     if (isIpBlocked($clientIP)) {
         sendError('Your IP has been temporarily blocked due to suspicious activity.', 403);
     }
-    
+
+    // OPTIONS pre-flight is already answered by furusato_cors_headers() (204);
+    // this guard is purely defensive.
     if ($method === 'OPTIONS') {
-        sendJsonResponse(['success' => true]);
+        http_response_code(204);
+        exit;
     }
-    
+
     // ============================================================
-    // GET: Fetch reservations
+    // GET - Admin listing, or verified single-reservation lookup
     // ============================================================
     if ($method === 'GET') {
-        $reservations = getReservations();
-        usort($reservations, function($a, $b) {
-            $timeA = strtotime($a['created'] ?? $a['date'] ?? '2000-01-01');
-            $timeB = strtotime($b['created'] ?? $b['date'] ?? '2000-01-01');
-            return $timeB - $timeA;
-        });
-        
-        if (!isAdminAuthenticated()) {
-            $publicReservations = array_map(function($r) {
-                return [
-                    'id' => $r['id'],
-                    'name' => substr($r['name'], 0, 1) . '***',
-                    'date' => $r['date'],
-                    'time' => $r['time'],
-                    'guests' => $r['guests'],
-                    'status' => $r['status'] ?? 'pending'
-                ];
-            }, array_slice($reservations, 0, 10));
-            sendJsonResponse(['reservations' => $publicReservations]);
+        if (furusato_admin_authenticated()) {
+            $reservations = readReservations();
+            usort($reservations, function ($a, $b) {
+                $timeA = strtotime($a['created'] ?? $a['date'] ?? '2000-01-01');
+                $timeB = strtotime($b['created'] ?? $b['date'] ?? '2000-01-01');
+                return $timeB - $timeA;
+            });
+
+            // Strip verification material (and raw IP) before it leaves the API.
+            $safe = array_map(function ($r) {
+                unset($r['verify_token'], $r['pending_edit_token'], $r['pending_edit_expires'], $r['ip']);
+                return $r;
+            }, $reservations);
+
+            sendJsonResponse(['reservations' => $safe]);
         }
-        
-        sendJsonResponse(['reservations' => $reservations]);
-    }
-    
-    // ============================================================
-    // PUT: Update existing reservation (for edit feature)
-    // ============================================================
-    if ($method === 'PUT') {
-        $reservationId = $input['id'] ?? '';
-        if (empty($reservationId)) {
-            sendError('Reservation ID required', 400);
+
+        // Unauthenticated: narrowly-scoped lookup of the caller's OWN reservation.
+        $lookupId    = trim((string) ($_GET['id'] ?? ''));
+        $lookupToken = trim((string) ($_GET['token'] ?? ''));
+        if ($lookupId === '' || $lookupToken === '') {
+            sendError('Unauthorized. Please log in to manage reservations.', 401);
         }
-        
-        $name = trim(substr($input['name'] ?? '', 0, MAX_NAME_LENGTH));
-        $email = trim(substr($input['email'] ?? '', 0, MAX_EMAIL_LENGTH));
-        $phone = trim(substr($input['phone'] ?? '', 0, MAX_PHONE_LENGTH));
-        $date = trim($input['date'] ?? '');
-        $time = trim($input['time'] ?? '');
-        $guests = (int)($input['guests'] ?? 0);
-        $notes = trim(substr($input['special_requests'] ?? '', 0, MAX_NOTES_LENGTH));
-        
-        $updateData = [
-            'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-            'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
-            'phone' => htmlspecialchars($phone, ENT_QUOTES, 'UTF-8'),
-            'date' => $date,
-            'time' => $time,
-            'guests' => $guests,
-            'special_requests' => htmlspecialchars($notes, ENT_QUOTES, 'UTF-8'),
-            'updated' => date('c')
-        ];
-        
-        if (updateReservation($reservationId, $updateData)) {
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-            $reservation = array_merge(['id' => $reservationId], $updateData);
-            sendWhatsAppReservation($reservation, true);
-            
-            sendJsonResponse(['success' => true, 'message' => 'Reservation updated successfully!']);
-        } else {
+        if (!preg_match('/^RES-[0-9A-F]{8}$/i', $lookupId)) {
             sendError('Reservation not found', 404);
         }
+
+        $reservations = readReservations();
+        foreach ($reservations as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            if (($r['id'] ?? '') === $lookupId
+                && !empty($r['verify_token'])
+                && hash_equals((string) $r['verify_token'], $lookupToken)) {
+                // Narrow fields only - never the verification token, email,
+                // phone, notes, IP or any other customer's data.
+                sendJsonResponse(['reservation' => [
+                    'id' => (string) $r['id'],
+                    'name' => (string) ($r['name'] ?? ''),
+                    'date' => (string) ($r['date'] ?? ''),
+                    'time' => (string) ($r['time'] ?? ''),
+                    'guests' => (int) ($r['guests'] ?? 1),
+                    'status' => (string) ($r['status'] ?? 'pending'),
+                ]]);
+            }
+        }
+
+        sendError('Reservation not found', 404);
     }
-    
+
     // ============================================================
-    // POST: New reservation with duplicate detection
+    // PUT - Secure customer edit: id + verification token + CSRF
     // ============================================================
-    if ($method === 'POST' && empty($input['action'])) {
-        
-        // STEP 1: Check rate limit (soft)
-        $rateLimitResult = checkRateLimit($clientIP);
-        
-        // STEP 2: Honeypot check (bot protection)
+    if ($method === 'PUT') {
+        $reservationId = trim((string) ($input['id'] ?? ''));
+        $token         = trim((string) ($input['token'] ?? ($input['edit_token'] ?? '')));
+
+        if ($reservationId === '') {
+            sendError('Reservation ID required', 400);
+        }
+        if (!preg_match('/^RES-[0-9A-F]{8}$/i', $reservationId)) {
+            // Never reveal whether the ID exists.
+            sendError('Reservation not found', 404);
+        }
+        if ($token === '') {
+            sendError('A verification token is required to edit a reservation', 403);
+        }
+        if (!verifyCsrf(false)) {
+            sendError('Invalid or missing security token. Please refresh the page and try again.', 403);
+        }
+
+        // Rate limiting applies to public edit attempts too (admins exempt).
+        if (!furusato_admin_authenticated()) {
+            $rate = enforcePublicReservationRateLimit($clientIP);
+            if (!$rate['allowed']) {
+                sendJsonResponse([
+                    'success' => false,
+                    'error' => 'Too many requests. Please try again later.',
+                    'data' => [
+                        'retry_after' => $rate['retry_after'],
+                        'retry_minutes' => max(1, (int) ceil($rate['retry_after'] / 60)),
+                    ],
+                ], 429);
+            }
+        }
+
+        // Ownership (id + verification token) is proven BEFORE the payload is
+        // processed, so unauthenticated probes never reach field validation.
+        // The authoritative check repeats atomically inside the storage lock.
+        $owned = false;
+        foreach (readReservations() as $r) {
+            if (!is_array($r) || ($r['id'] ?? '') !== $reservationId) {
+                continue;
+            }
+            $owned = (!empty($r['verify_token']) && hash_equals((string) $r['verify_token'], $token))
+                || (!empty($r['pending_edit_token'])
+                    && hash_equals((string) $r['pending_edit_token'], $token)
+                    && (int) ($r['pending_edit_expires'] ?? 0) > time());
+            break;
+        }
+        if (!$owned) {
+            // Uniform response: never reveal whether the reservation ID exists.
+            sendError('Invalid reservation ID or verification token', 403);
+        }
+
+        // Same validation rules as creation (runs only after ownership is proven).
+        $validation = validateReservationInput($input);
+        if (!empty($validation['errors'])) {
+            sendError(implode(' ', $validation['errors']), 422);
+        }
+        $updateData = $validation['data'];
+
+        $outcome = withReservationLock(function (array $reservations) use ($reservationId, $token, $updateData) {
+            foreach ($reservations as $i => $r) {
+                if (!is_array($r)) {
+                    continue;
+                }
+                if (($r['id'] ?? '') !== $reservationId) {
+                    continue;
+                }
+
+                $now = time();
+                $validToken =
+                    (!empty($r['verify_token']) && hash_equals((string) $r['verify_token'], $token))
+                    || (!empty($r['pending_edit_token'])
+                        && hash_equals((string) $r['pending_edit_token'], $token)
+                        && (int) ($r['pending_edit_expires'] ?? 0) > $now);
+                if (!$validToken) {
+                    return ['commit' => false, 'payload' => ['status' => 'auth_failed']];
+                }
+
+                $reservations[$i] = array_merge($r, $updateData);
+                $reservations[$i]['updated'] = date('c');
+                // Single-use: the temporary duplicate-edit token is consumed.
+                unset($reservations[$i]['pending_edit_token'], $reservations[$i]['pending_edit_expires']);
+
+                return [
+                    'commit' => true,
+                    'list' => $reservations,
+                    'payload' => ['status' => 'updated', 'reservation' => $reservations[$i]],
+                ];
+            }
+            return ['commit' => false, 'payload' => ['status' => 'not_found']];
+        });
+
+        $payloadStatus = $outcome['payload']['status'] ?? 'error';
+        if ($payloadStatus === 'updated') {
+            logAudit('RESERVATION_UPDATED', 'ID: ' . $reservationId);
+            respondAndNotify([
+                'success' => true,
+                'id' => $reservationId,
+                'message' => 'Reservation updated successfully!',
+            ], [$outcome['payload']['reservation']], true);
+        }
+        if ($payloadStatus === 'auth_failed') {
+            sendError('Invalid verification token for this reservation', 403);
+        }
+        sendError('Reservation not found', 404);
+    }
+
+    // ============================================================
+    // POST - Admin operations (action) or public reservation creation
+    // ============================================================
+    if ($method === 'POST') {
+        $action = trim((string) ($input['action'] ?? ''));
+
+        // ────────────────────────────────────────────────────────────
+        // Admin operations: authenticated admin session + CSRF + valid
+        // action + valid reservation ID.
+        // ────────────────────────────────────────────────────────────
+        if ($action !== '') {
+            if (!furusato_admin_authenticated()) {
+                sendError('Unauthorized. Please log in to perform this action.', 401);
+            }
+            if (!verifyCsrf(false)) {
+                sendError('Invalid or missing security token. Please refresh the page and try again.', 403);
+            }
+
+            $reservationId = trim((string) ($input['id'] ?? ''));
+            if (!preg_match('/^RES-[0-9A-F]{8}$/i', $reservationId)) {
+                sendError('Invalid reservation ID', 400);
+            }
+
+            // ---- update_status ----
+            if ($action === 'update_status') {
+                $status = trim((string) ($input['status'] ?? ''));
+                if (!in_array($status, RES_STATUSES, true)) {
+                    sendError('Invalid status value', 400);
+                }
+
+                $outcome = withReservationLock(function (array $reservations) use ($reservationId, $status) {
+                    foreach ($reservations as $i => $r) {
+                        if (!is_array($r)) {
+                            continue;
+                        }
+                        if (($r['id'] ?? '') !== $reservationId) {
+                            continue;
+                        }
+                        $reservations[$i]['status'] = $status;
+                        $reservations[$i]['updated'] = date('c');
+                        return ['commit' => true, 'list' => $reservations, 'payload' => ['status' => 'ok']];
+                    }
+                    return ['commit' => false, 'payload' => ['status' => 'not_found']];
+                });
+
+                if (($outcome['payload']['status'] ?? '') === 'ok') {
+                    logAudit('RESERVATION_STATUS_UPDATED', 'ID: ' . $reservationId . ', Status: ' . $status);
+                    sendJsonResponse(['success' => true]);
+                }
+                sendError('Reservation not found', 404);
+            }
+
+            // ---- update_notes ----
+            if ($action === 'update_notes') {
+                $notes = trim((string) ($input['notes'] ?? ''));
+                $notes = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $notes);
+                if (strlen($notes) > RES_MAX_NOTES_LENGTH) {
+                    $notes = substr($notes, 0, RES_MAX_NOTES_LENGTH);
+                }
+
+                $outcome = withReservationLock(function (array $reservations) use ($reservationId, $notes) {
+                    foreach ($reservations as $i => $r) {
+                        if (!is_array($r)) {
+                            continue;
+                        }
+                        if (($r['id'] ?? '') !== $reservationId) {
+                            continue;
+                        }
+                        $reservations[$i]['admin_notes'] = $notes;
+                        $reservations[$i]['updated'] = date('c');
+                        return ['commit' => true, 'list' => $reservations, 'payload' => ['status' => 'ok']];
+                    }
+                    return ['commit' => false, 'payload' => ['status' => 'not_found']];
+                });
+
+                if (($outcome['payload']['status'] ?? '') === 'ok') {
+                    logAudit('RESERVATION_NOTES_UPDATED', 'ID: ' . $reservationId);
+                    sendJsonResponse(['success' => true]);
+                }
+                sendError('Reservation not found', 404);
+            }
+
+            // ---- delete ----
+            if ($action === 'delete') {
+                $outcome = withReservationLock(function (array $reservations) use ($reservationId) {
+                    $count = count($reservations);
+                    $filtered = array_values(array_filter($reservations, function ($r) use ($reservationId) {
+                        return !is_array($r) || ($r['id'] ?? '') !== $reservationId;
+                    }));
+                    if (count($filtered) === $count) {
+                        return ['commit' => false, 'payload' => ['status' => 'not_found']];
+                    }
+                    return ['commit' => true, 'list' => $filtered, 'payload' => ['status' => 'ok']];
+                });
+
+                if (($outcome['payload']['status'] ?? '') === 'ok') {
+                    logAudit('RESERVATION_DELETED', 'ID: ' . $reservationId);
+                    sendJsonResponse(['success' => true]);
+                }
+                sendError('Reservation not found', 404);
+            }
+
+            sendError('Invalid action', 400);
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // Public reservation creation (no action)
+        // ────────────────────────────────────────────────────────────
+        $isAdmin = furusato_admin_authenticated();
+        $rate = ['is_high_volume' => false];
+        if (!$isAdmin) {
+            $rate = enforcePublicReservationRateLimit($clientIP);
+            if (!$rate['allowed']) {
+                sendJsonResponse([
+                    'success' => false,
+                    'error' => 'Too many requests. Please try again later.',
+                    'data' => [
+                        'retry_after' => $rate['retry_after'],
+                        'retry_minutes' => max(1, (int) ceil($rate['retry_after'] / 60)),
+                    ],
+                ], 429);
+            }
+        }
+
+        // CSRF is mandatory for creating a reservation.
+        if (!verifyCsrf(false)) {
+            sendError('Invalid or missing security token. Please refresh the page and try again.', 403);
+        }
+
+        // Honeypot (bot trap): pretend success without doing anything.
         if (!empty($input['website'])) {
             sendJsonResponse(['success' => true, 'id' => 'bot-' . time()]);
         }
-        
-        // STEP 3: Validate input data
-        $name = trim(substr($input['name'] ?? $input['full_name'] ?? '', 0, MAX_NAME_LENGTH));
-        $email = trim(substr($input['email'] ?? '', 0, MAX_EMAIL_LENGTH));
-        $phone = trim(substr($input['phone'] ?? $input['phone_number'] ?? '', 0, MAX_PHONE_LENGTH));
-        $date = trim($input['date'] ?? '');
-        $time = trim($input['time'] ?? '');
-        $guests = (int)($input['guests'] ?? $input['number_of_guests'] ?? 0);
-        $notes = trim(substr($input['special_requests'] ?? $input['notes'] ?? '', 0, MAX_NOTES_LENGTH));
-        
-        $errors = [];
-        
-        if (strlen($name) < 2) $errors[] = 'Full name is required (minimum 2 characters)';
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Please enter a valid email address';
+
+        $validation = validateReservationInput($input);
+        if (!empty($validation['errors'])) {
+            sendError(implode(' ', $validation['errors']), 422);
         }
-        if (empty($phone)) {
-            $errors[] = 'Phone number is required';
-        } elseif (!validatePhoneNumber($phone)) {
-            $errors[] = 'Please enter a valid phone number with country code (e.g., +254722488706 for Kenya)';
-        }
-        if (empty($date)) {
-            $errors[] = 'Date is required';
-        } else {
-            $selectedDate = strtotime($date);
-            $today = strtotime(date('Y-m-d'));
-            if ($selectedDate < $today) $errors[] = 'Date cannot be in the past';
-        }
-        if (empty($time)) {
-            $errors[] = 'Time is required';
-        } else {
-            $timeParts = explode(':', $time);
-            $hours = (int)($timeParts[0] ?? 0);
-            $minutes = (int)($timeParts[1] ?? 0);
-            if ($hours < 12 || $hours > 21 || ($hours == 21 && $minutes > 0)) {
-                $errors[] = 'Time must be between 12:00 PM and 9:00 PM';
+        $data = $validation['data'];
+
+        $outcome = withReservationLock(function (array $reservations) use ($clientIP, $data) {
+            // Duplicate check and save are performed atomically under the lock.
+            $duplicateCheck = checkDuplicateReservation(
+                $reservations,
+                $data['name'],
+                $data['email'],
+                $data['phone'],
+                $data['date'],
+                $data['time']
+            );
+
+            if ($duplicateCheck['is_duplicate']) {
+                // Issue a short-lived, single-use edit token for the existing
+                // reservation so the duplicate-edit flow stays secure AND the
+                // frontend UX is preserved. Legacy records without a verify_token
+                // remain editable through this path only (no security bypass).
+                $pendingToken = generateSecureToken(16);
+                foreach ($reservations as $i => $r) {
+                    if (!is_array($r)) {
+                        continue;
+                    }
+                    if (($r['id'] ?? '') === $duplicateCheck['existing_id']) {
+                        $reservations[$i]['pending_edit_token'] = $pendingToken;
+                        $reservations[$i]['pending_edit_expires'] = time() + RES_PENDING_EDIT_TTL;
+                        break;
+                    }
+                }
+                return [
+                    'commit' => true,
+                    'list' => $reservations,
+                    'payload' => [
+                        'status' => 'duplicate',
+                        'existing_id' => $duplicateCheck['existing_id'],
+                        'existing_data' => $duplicateCheck['existing_data'],
+                        'edit_token' => $pendingToken,
+                    ],
+                ];
             }
-        }
-        if ($guests < 1 || $guests > 50) $errors[] = 'Number of guests must be between 1 and 50';
-        
-        if (!empty($errors)) {
-            sendError(implode(' ', $errors), 422);
-        }
-        
-        // STEP 4: Check for duplicate - EXACT same details only
-        $reservations = getReservations();
-        $duplicateCheck = checkDuplicateReservation($reservations, $name, $email, $phone, $date, $time);
-        
-        if ($duplicateCheck['is_duplicate']) {
-            // Return duplicate info for frontend to handle
+
+            $existingIds = [];
+            foreach ($reservations as $r) {
+                if (is_array($r)) {
+                    $existingIds[$r['id'] ?? ''] = true;
+                }
+            }
+
+            $reservation = [
+                'id' => generateReservationId($existingIds),
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'date' => $data['date'],
+                'time' => $data['time'],
+                'guests' => $data['guests'],
+                'special_requests' => $data['special_requests'],
+                'status' => 'pending',
+                'ip' => $clientIP,
+                'created' => date('c'),
+                // ***** Stored original-format data (no HTML encoding). Output
+                // escaping happens at the display boundary. *****
+                'verify_token' => generateSecureToken(32),
+            ];
+
+            $reservations[] = $reservation;
+            return ['commit' => true, 'list' => $reservations, 'payload' => ['status' => 'created', 'reservation' => $reservation]];
+        });
+
+        $payloadStatus = $outcome['payload']['status'] ?? 'error';
+
+        if ($payloadStatus === 'duplicate') {
             sendJsonResponse([
                 'success' => false,
                 'duplicate_detected' => true,
-                'existing_id' => $duplicateCheck['existing_id'],
-                'existing_data' => $duplicateCheck['existing_data'],
-                'message' => 'A reservation with these exact details already exists. Would you like to edit it?'
+                'existing_id' => $outcome['payload']['existing_id'],
+                'existing_data' => $outcome['payload']['existing_data'],
+                'edit_token' => $outcome['payload']['edit_token'],
+                'message' => 'A reservation with these exact details already exists. Would you like to edit it?',
             ], 409);
         }
-        
-        // STEP 5: Save new reservation
-        $reservationId = generateReservationId();
-        
-        $reservation = [
-            'id' => $reservationId,
-            'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-            'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
-            'phone' => htmlspecialchars($phone, ENT_QUOTES, 'UTF-8'),
-            'date' => $date,
-            'time' => $time,
-            'guests' => $guests,
-            'special_requests' => htmlspecialchars($notes, ENT_QUOTES, 'UTF-8'),
-            'status' => 'pending',
-            'ip' => $clientIP,
-            'created' => date('c'),
-        ];
-        
-        $reservations[] = $reservation;
-        saveReservations($reservations);
-        
-        // STEP 6: Send notifications
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
+
+        if ($payloadStatus === 'created') {
+            $created = $outcome['payload']['reservation'];
+            $responseData = [
+                'success' => true,
+                'id' => $created['id'],
+                // The customer needs their own verification token to edit later.
+                'edit_token' => $created['verify_token'],
+                'message' => 'Reservation received! We will confirm within 24 hours.',
+            ];
+            if (!empty($rate['is_high_volume'])) {
+                $responseData['warning'] = 'You have made ' . $rate['count'] . ' reservations in the past hour. If you need to make many reservations, please call us directly at 0722 488 706 for assistance.';
+            }
+            respondAndNotify($responseData, [$created], false);
         }
-        sendWhatsAppReservation($reservation);
-        
-        $adminHtml = "<h2>New Reservation</h2>
-        <p><strong>Name:</strong> " . htmlspecialchars($name) . "</p>
-        <p><strong>Phone:</strong> " . htmlspecialchars($phone) . "</p>
-        <p><strong>Email:</strong> " . htmlspecialchars($email) . "</p>
-        <p><strong>Date:</strong> " . htmlspecialchars($date) . "</p>
-        <p><strong>Time:</strong> " . htmlspecialchars($time) . "</p>
-        <p><strong>Guests:</strong> " . $guests . "</p>
-        <p><strong>Special Requests:</strong> " . nl2br(htmlspecialchars($notes)) . "</p>
-        <p><strong>ID:</strong> " . $reservationId . "</p>";
-        sendEmail('furusatoreservation@gmail.com', 'New Reservation: ' . $name, $adminHtml);
-        
-        if (!empty($email)) {
-            $clientHtml = "<h2>Reservation Received!</h2>
-            <p>Dear " . htmlspecialchars($name) . ",</p>
-            <p>Thank you for choosing Furusato. We have received your reservation request.</p>
-            <p><strong>Reference:</strong> " . $reservationId . "</p>
-            <p><strong>Details:</strong><br>
-            Date: " . htmlspecialchars($date) . "<br>
-            Time: " . htmlspecialchars($time) . "<br>
-            Guests: " . $guests . "</p>
-            <p>We will confirm your table within 24 hours.</p>
-            <p>Questions? Call us at 0722 488 706</p>";
-            sendEmail($email, 'Reservation Confirmation - Furusato', $clientHtml);
-        }
-        
-        // STEP 7: Return success
-        $responseData = [
-            'success' => true, 
-            'id' => $reservationId, 
-            'message' => 'Reservation received! We will confirm within 24 hours.'
-        ];
-        
-        if ($rateLimitResult['is_high_volume']) {
-            $responseData['warning'] = 'You have made ' . $rateLimitResult['count'] . ' reservations in the past hour. If you need to make many reservations, please call us directly at 0722 488 706 for assistance.';
-        }
-        
-        sendJsonResponse($responseData);
+
+        throw new RuntimeException('Unexpected reservation storage outcome');
     }
-    
-    // ============================================================
-    // POST with action: Admin operations
-    // ============================================================
-    if ($method === 'POST' && isset($input['action'])) {
-        if (!isAdminAuthenticated()) {
-            sendError('Unauthorized. Please log in to perform this action.', 401);
-        }
-        
-        $action = $input['action'];
-        
-        if ($action === 'update_status') {
-            $id = $input['id'] ?? '';
-            $status = $input['status'] ?? '';
-            
-            // Full reservation lifecycle: request → confirmation → visit
-            if (!in_array($status, ['pending', 'confirmed', 'declined', 'cancelled', 'completed', 'no_show'])) {
-                sendError('Invalid status value', 400);
-            }
-            
-            $reservations = getReservations();
-            $updated = false;
-            foreach ($reservations as &$r) {
-                if ($r['id'] === $id) {
-                    $r['status'] = $status;
-                    $r['updated'] = date('c');
-                    $updated = true;
-                    break;
-                }
-            }
-            if ($updated) {
-                saveReservations($reservations);
-                logAudit('RESERVATION_STATUS_UPDATED', "ID: {$id}, Status: {$status}");
-                sendJsonResponse(['success' => true]);
-            } else {
-                sendError('Reservation not found', 404);
-            }
-        }
-        
-        // ============================================================
-        // Add / update internal staff notes on a reservation
-        // ============================================================
-        if ($action === 'update_notes') {
-            $id = $input['id'] ?? '';
-            $notes = trim(substr($input['notes'] ?? '', 0, MAX_NOTES_LENGTH));
-            
-            $reservations = getReservations();
-            $updated = false;
-            foreach ($reservations as &$r) {
-                if ($r['id'] === $id) {
-                    $r['admin_notes'] = htmlspecialchars($notes, ENT_QUOTES, 'UTF-8');
-                    $r['updated'] = date('c');
-                    $updated = true;
-                    break;
-                }
-            }
-            if ($updated) {
-                saveReservations($reservations);
-                logAudit('RESERVATION_NOTES_UPDATED', "ID: {$id}");
-                sendJsonResponse(['success' => true]);
-            } else {
-                sendError('Reservation not found', 404);
-            }
-        }
-        
-        if ($action === 'delete') {
-            $id = $input['id'] ?? '';
-            $reservations = getReservations();
-            $originalCount = count($reservations);
-            $reservations = array_values(array_filter($reservations, function($r) use ($id) {
-                return $r['id'] !== $id;
-            }));
-            if (count($reservations) < $originalCount) {
-                saveReservations($reservations);
-                sendJsonResponse(['success' => true]);
-            } else {
-                sendError('Reservation not found', 404);
-            }
-        }
-        
-        sendError('Invalid action', 400);
-    }
-    
+
     sendError('Invalid request method', 405);
-    
-} catch (Exception $e) {
-    error_log('Reservation API Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+
+} catch (Throwable $e) {
+    error_log('Reservation API error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
     sendError('An error occurred. Please try again.', 500);
 }
-?>

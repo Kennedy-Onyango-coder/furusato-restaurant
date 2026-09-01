@@ -213,7 +213,7 @@
     }
   }
 
-  function showDuplicateModal(existingData, existingId) {
+  function showDuplicateModal(existingData, existingId, editToken) {
     createDuplicateModal();
     pendingEditId = existingId;
     
@@ -246,7 +246,7 @@
     
     newEditBtn.addEventListener('click', function() {
       modal.style.display = 'none';
-      loadReservationForEdit(existingId, existingData);
+      loadReservationForEdit(existingId, existingData, editToken);
     });
     
     newCancelBtn.addEventListener('click', function() {
@@ -266,7 +266,7 @@
     });
   }
   
-  function loadReservationForEdit(id, data) {
+  function loadReservationForEdit(id, data, editToken) {
     // Populate form with existing data
     if (nameInput) nameInput.value = data.name || '';
     if (emailInput) emailInput.value = data.email || '';
@@ -295,6 +295,7 @@
     // Store that we're in edit mode
     window.isEditing = true;
     window.editingId = id;
+    window.editingToken = editToken || null;
   }
   
   async function submitUpdateReservation(id, payload) {
@@ -305,9 +306,10 @@
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRF-Token": csrfToken
         },
-        body: JSON.stringify({ id: id, ...payload })
+        body: JSON.stringify({ id: id, token: window.editingToken || "", ...payload })
       });
       
       var result = await response.json();
@@ -317,11 +319,15 @@
         // Reset edit mode
         window.isEditing = false;
         window.editingId = null;
+        window.editingToken = null;
         if (submitBtn) {
           submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Reserve My Table';
           submitBtn.style.background = '';
         }
       } else {
+        if (response.status === 403 && result.csrf_token) {
+          updateCsrfToken(result.csrf_token);
+        }
         showGeneralError(result.error || 'Failed to update reservation. Please try again.');
       }
     } catch (err) {
@@ -367,7 +373,8 @@
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRF-Token": csrfToken
         },
         body: JSON.stringify(payload)
       });
@@ -376,7 +383,7 @@
       
       if (response.status === 409 && result.duplicate_detected) {
         // Show duplicate modal
-        showDuplicateModal(result.existing_data, result.existing_id);
+        showDuplicateModal(result.existing_data, result.existing_id, result.edit_token || null);
         return;
       }
       

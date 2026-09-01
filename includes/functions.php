@@ -183,6 +183,46 @@ function startAdminSession(bool $requireLogin = true): void
 }
 
 /**
+ * Centralized admin-session check for API endpoints.
+ *
+ * Verifies the login flag, the 30-minute inactivity timeout and the IP/User-Agent
+ * binding recorded at login. Fails closed when any check does not match.
+ * Used by api/reservations.php for every admin operation.
+ */
+function furusato_admin_authenticated(): bool
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+        return false;
+    }
+
+    // 30-minute inactivity timeout
+    if (isset($_SESSION['last_activity']) && (time() - (int) $_SESSION['last_activity']) > SESSION_TIMEOUT) {
+        return false;
+    }
+
+    // IP binding — fail closed when the stored address no longer matches
+    $currentIP = getClientIP();
+    if (!empty($_SESSION['session_ip']) && $_SESSION['session_ip'] !== $currentIP) {
+        logAudit('SESSION_IP_MISMATCH', 'Expected: ' . $_SESSION['session_ip'] . ', Got: ' . $currentIP);
+        return false;
+    }
+
+    // User-Agent binding — fail closed when the UA changes
+    $currentUA = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (!empty($_SESSION['session_ua']) && $_SESSION['session_ua'] !== $currentUA) {
+        logAudit('SESSION_UA_MISMATCH', 'Expected stored User-Agent');
+        return false;
+    }
+
+    $_SESSION['last_activity'] = time();
+    return true;
+}
+
+/**
  * Destroy session completely
  */
 function destroySession(): void
@@ -237,10 +277,22 @@ function verifyCsrf(bool $consume = true): bool
         session_start();
     }
     
-    $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    
-    if (empty($token) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
-        logAudit('CSRF_VERIFY_FAILED', "Token provided: " . substr($token, 0, 20));
+    $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    // Some clients (e.g. the public reservation form) send application/json
+    // bodies. PHP never populates $_POST for JSON payloads, so fall back to a
+    // token embedded in the decoded body when no header/form token was sent.
+    if ($token === '') {
+        $rawBody = file_get_contents('php://input');
+        if (is_string($rawBody) && $rawBody !== '' && strpos($rawBody, 'csrf_token') !== false) {
+            $decodedBody = json_decode($rawBody, true);
+            if (is_array($decodedBody)) {
+                $token = (string) ($decodedBody['csrf_token'] ?? '');
+            }
+        }
+    }
+    if (empty($token) || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+        // Never log the token itself (it is a session secret).
+        logAudit('CSRF_VERIFY_FAILED', 'IP: ' . getClientIP());
         return false;
     }
     
@@ -615,7 +667,10 @@ function get_whatsapp_number(): string
     }
 
     $number = preg_replace('/[^0-9]/', '', $number);
-    $cached = ($number !== '') ? $number : '254734639203'; // safe fallback
+    // No hardcoded production recipient here. Last resort is the environment /
+    // admin-managed configuration chain (WHATSAPP_PHONE env or server .env.php,
+    // then data/settings.json). Empty means "configure me" — never a secret fallback.
+    $cached = ($number !== '') ? $number : furusato_whatsapp_phone();
     return $cached;
 }
 
@@ -865,8 +920,11 @@ function getClientIP(): string
         }
     }
     
-    // Also check CloudFlare header
-    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+    // Also check CloudFlare header, but ONLY when the direct peer is a trusted
+    // proxy. On the actual Hostinger deployment there is no Cloudflare edge in
+    // front of the application, so honouring a client-supplied CF-Connecting-IP
+    // would let anyone forge their IP and defeat per-IP rate limiting.
+    if (in_array($remote, TRUSTED_PROXIES, true) && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
         $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
         if (filter_var($ip, FILTER_VALIDATE_IP)) {
             return $ip;

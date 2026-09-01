@@ -133,7 +133,8 @@ function furusato_deliver(string $to, string $subject, string $headers, string $
 function sendReservationEmail($reservationData) {
     // Configuration
     $to = "furusatoreservation@gmail.com";
-    $subject = "🆕 New Reservation: " . $reservationData['name'] . " - " . $reservationData['date'];
+    $safeName = preg_replace('/[\r\n\t]+/', ' ', trim((string) ($reservationData['name'] ?? '')));
+    $subject = "🆕 New Reservation: " . $safeName . " - " . ($reservationData['date'] ?? '');
 
     // Sender must be a Furusato-owned address (never the customer's address).
     $fromAddress = (string) furusato_config('SMTP_FROM', 'reservations@furusatorestaurant.com');
@@ -144,7 +145,7 @@ function sendReservationEmail($reservationData) {
     // ============================================================
     $headers = "MIME-Version: 1.0\r\n";
     $headers .= "From: " . $fromName . " <" . $fromAddress . ">\r\n";
-    $headers .= "Reply-To: " . $reservationData['email'] . "\r\n";
+    $headers .= "Reply-To: " . preg_replace('/[\r\n]+/', '', (string) ($reservationData['email'] ?? '')) . "\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
     $headers .= "X-Priority: 1\r\n";
     $headers .= "Priority: urgent\r\n";
@@ -374,7 +375,7 @@ function sendReservationEmail($reservationData) {
     $logEntry = date('Y-m-d H:i:s') . " | ";
     $logEntry .= $mailSent ? "✅ SUCCESS" : "❌ FAILED";
     $logEntry .= " | To: $to";
-    $logEntry .= " | Customer: " . $reservationData['email'];
+    $logEntry .= " | Customer: " . preg_replace('/[\r\n]+/', '', (string) ($reservationData['email'] ?? ''));
     $logEntry .= " | Date: " . $reservationData['date'];
     $logEntry .= " | IP: " . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
     $logEntry .= "\n";
@@ -392,7 +393,11 @@ function sendReservationEmail($reservationData) {
 }
 
 function sendCustomerConfirmation($reservationData) {
-    $to = $reservationData['email'];
+    $to = trim((string) ($reservationData['email'] ?? ''));
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        error_log('Customer confirmation skipped: invalid recipient email.');
+        return false;
+    }
     $subject = "✅ Reservation Received - Furusato Japanese Restaurant";
     
     $headers = "MIME-Version: 1.0\r\n";
@@ -403,6 +408,7 @@ function sendCustomerConfirmation($reservationData) {
     
     // Plain text version for customer
     $plainText = "Thank You, " . $reservationData['name'] . "!\n\n";
+    $plainText .= "Your Reservation ID: " . ($reservationData['id'] ?? '') . "\n\n";
     $plainText .= "We have received your reservation request for:\n";
     $plainText .= "Date: " . $reservationData['date'] . "\n";
     $plainText .= "Time: " . $reservationData['time'] . "\n";
@@ -445,6 +451,7 @@ function sendCustomerConfirmation($reservationData) {
             <div class="thank-you">Thank You, ' . htmlspecialchars($reservationData['name']) . '!</div>
             <p>We have received your reservation request. Here\'s what you booked:</p>
             <div class="details-box">
+                <div class="detail-item"><span class="detail-label">🆔 Reservation:</span><span class="detail-value">' . htmlspecialchars((string) ($reservationData['id'] ?? '')) . '</span></div>
                 <div class="detail-item"><span class="detail-label">📅 Date:</span><span class="detail-value">' . htmlspecialchars($reservationData['date']) . '</span></div>
                 <div class="detail-item"><span class="detail-label">⏰ Time:</span><span class="detail-value">' . htmlspecialchars($reservationData['time']) . '</span></div>
                 <div class="detail-item"><span class="detail-label">👥 Guests:</span><span class="detail-value">' . htmlspecialchars($reservationData['guests']) . ' people</span></div>

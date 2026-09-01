@@ -13,7 +13,7 @@ date_default_timezone_set('Africa/Nairobi');
 // falling back to the admin-managed values in data/settings.json.
 require_once __DIR__ . '/config.php';
 
-function sendWhatsAppReservation($reservation) {
+function sendWhatsAppReservation($reservation, $isUpdate = false) {
     $yourWhatsAppNumber = furusato_whatsapp_phone();
     $apiKey = furusato_whatsapp_api_key();
     if ($apiKey === '') {
@@ -21,7 +21,14 @@ function sendWhatsAppReservation($reservation) {
         if (is_file($settingsFile)) {
             $stored = json_decode((string) file_get_contents($settingsFile), true);
             if (is_array($stored)) {
-                $apiKey = (string) ($stored['whatsapp']['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+                // Legacy admin-stored key (settings.whatsapp may be a flat string
+                // or the nested admin structure; guard both without warnings).
+                $wa = $stored['whatsapp'] ?? null;
+                if (is_array($wa)) {
+                    $apiKey = (string) ($wa['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+                } else {
+                    $apiKey = (string) ($stored['whatsapp_api_key'] ?? '');
+                }
             }
         }
     }
@@ -40,8 +47,9 @@ function sendWhatsAppReservation($reservation) {
     $reservationTimeFormatted = date('h:i A', strtotime($reservation['time']));
     $reservationDateFormatted = date('l, F j, Y', strtotime($reservation['date']));
     
-    // Build the formatted message (clean, no unnecessary emojis)
-    $message = "NEW RESERVATION - Furusato\n";
+    // Build the formatted message (clean, no unnecessary emojis). Updates are
+    // flagged so staff can tell a modification from a brand new reservation.
+    $message = ($isUpdate ? "RESERVATION UPDATED - Furusato\n" : "NEW RESERVATION - Furusato\n");
     $message .= "----------------------------------------\n";
     $message .= "Guest: " . $reservation['name'] . "\n";
     $message .= "Phone: " . $reservation['phone'] . "\n";
@@ -74,7 +82,7 @@ function sendWhatsAppReservation($reservation) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     
     $response = curl_exec($ch);
@@ -101,7 +109,12 @@ function sendWhatsAppTest($message) {
         if (is_file($settingsFile)) {
             $stored = json_decode((string) file_get_contents($settingsFile), true);
             if (is_array($stored)) {
-                $apiKey = (string) ($stored['whatsapp']['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+                $wa = $stored['whatsapp'] ?? null;
+                if (is_array($wa)) {
+                    $apiKey = (string) ($wa['api_key'] ?? $stored['whatsapp_api_key'] ?? '');
+                } else {
+                    $apiKey = (string) ($stored['whatsapp_api_key'] ?? '');
+                }
             }
         }
     }
