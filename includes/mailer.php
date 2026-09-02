@@ -34,6 +34,9 @@ function furusato_smtp_configured(): bool
 function furusato_smtp_send(string $to, string $subject, string $headers, string $body): bool
 {
     $sock = null;
+    $host = 'unknown';
+    $port = 0;
+    $secure = 'unknown';
     try {
         $host   = (string) furusato_config('SMTP_HOST');
         $port   = (int) (furusato_config('SMTP_PORT', 587) ?: 587);
@@ -45,7 +48,7 @@ function furusato_smtp_send(string $to, string $subject, string $headers, string
         $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host;
         $sock = @fsockopen($remote, $port, $errno, $errstr, 15);
         if (!$sock) {
-            error_log("SMTP connect failed to {$host}:{$port}: {$errstr} ({$errno})");
+            error_log("SMTP failed at connection stage to {$host}:{$port} (secure={$secure}): {$errstr} ({$errno})");
             return false;
         }
         stream_set_timeout($sock, 25);
@@ -60,14 +63,31 @@ function furusato_smtp_send(string $to, string $subject, string $headers, string
             }
             return $data;
         };
-        $cmd = function (string $c) use ($sock, $read) {
-            fwrite($sock, $c . "\r\n");
+        // fwrite() can return short writes on SSL streams; always complete the
+        // send or fail loudly instead of silently corrupting the conversation.
+        $writeAll = function (string $data) use ($sock): void {
+            $total = strlen($data);
+            $written = 0;
+            while ($written < $total) {
+                $n = fwrite($sock, substr($data, $written));
+                if ($n === false || $n === 0) {
+                    throw new RuntimeException('SMTP connection lost while sending data');
+                }
+                $written += $n;
+            }
+        };
+        $cmd = function (string $c) use ($sock, $read, $writeAll) {
+            $writeAll($c . "\r\n");
             return $read();
         };
         $expect = function (int $min, int $max, string $resp, string $what) {
             $code = (int) substr($resp, 0, 3);
             if ($code < $min || $code > $max) {
-                throw new RuntimeException("SMTP {$what} failed: " . trim($resp));
+                $detail = trim($resp);
+                if ($detail === '') {
+                    $detail = 'no response received (connection closed or timed out)';
+                }
+                throw new RuntimeException("SMTP failed at {$what} stage: " . $detail);
             }
         };
 
@@ -95,19 +115,28 @@ function furusato_smtp_send(string $to, string $subject, string $headers, string
         $expect(300, 399, $cmd('DATA'), 'DATA');
 
         // Full DATA payload: mail() would add To/Subject itself, raw SMTP must
-        // include them. Dot-stuff leading periods per RFC 5321.
+        // include them. Dot-stuff leading periods per RFC 5321 BEFORE appending
+        // the final "." terminator - stuffing after appending would double the
+        // terminator itself, so the server would never see the end of the
+        // message and the conversation would time out.
         $payload = 'To: ' . $to . "\r\n"
             . 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n"
             . $headers . "\r\n"
-            . $body . "\r\n.";
-        $payload = preg_replace('/^\./m', '..', $payload);
+            . $body;
+        $payload = preg_replace('/^\./m', '..', $payload) . "\r\n.";
 
-        $expect(200, 299, $cmd($payload), 'message delivery');
+        $expect(200, 299, $cmd($payload), 'final message delivery');
         $cmd('QUIT');
         fclose($sock);
         return true;
     } catch (Throwable $e) {
-        error_log('SMTP send failed: ' . $e->getMessage());
+        error_log(sprintf(
+            'SMTP send failed (host=%s port=%d secure=%s): %s',
+            $host,
+            $port,
+            $secure,
+            $e->getMessage()
+        ));
         if (is_resource($sock)) {
             fclose($sock);
         }
@@ -121,13 +150,20 @@ function furusato_smtp_send(string $to, string $subject, string $headers, string
  */
 function furusato_deliver(string $to, string $subject, string $headers, string $message): bool
 {
-    if (furusato_smtp_configured()) {
+    $smtpConfigured = furusato_smtp_configured();
+    if ($smtpConfigured) {
         if (furusato_smtp_send($to, $subject, $headers, $message)) {
+            error_log('Email delivered via SMTP for "' . $subject . '" to ' . $to . '.');
             return true;
         }
         error_log('SMTP delivery failed for "' . $subject . '" - falling back to PHP mail().');
     }
-    return @mail($to, $subject, $message, $headers);
+    $sent = @mail($to, $subject, $message, $headers);
+    if (!$sent) {
+        error_log('Complete delivery failure for "' . $subject . '" to ' . $to . ' - '
+            . ($smtpConfigured ? 'SMTP failed and PHP mail() also returned false.' : 'PHP mail() returned false.'));
+    }
+    return $sent;
 }
 
 function sendReservationEmail($reservationData) {
@@ -162,7 +198,7 @@ function sendReservationEmail($reservationData) {
     ini_set('sendmail_from', 'bounce@furusatorestaurant.com');
     
     // ============================================================
-    // PLAIN TEXT VERSION (Gmail REQUIRES this for inbox delivery)
+    // PLAIN TEXT VERSION (multipart/alternative with both formats is good practice for deliverability)
     // ============================================================
     $plainText = "NEW RESERVATION AT FURUSATO RESTAURANT\n";
     $plainText .= "================================\n\n";
@@ -345,7 +381,7 @@ function sendReservationEmail($reservationData) {
 </html>';
     
     // ============================================================
-    // MULTIPART MESSAGE (Plain Text + HTML) - CRITICAL FOR GMAIL
+    // MULTIPART MESSAGE (Plain Text + HTML) - good practice, preserved
     // ============================================================
     $boundary = md5(uniqid(time()));
     $headers .= "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n";
@@ -363,7 +399,7 @@ function sendReservationEmail($reservationData) {
     // ============================================================
     // SEND EMAIL
     // ============================================================
-    $mailSent = @mail($to, $subject, $message, $headers);
+    $mailSent = furusato_deliver($to, $subject, $headers, $message);
     
     // Log the attempt
     $logFile = __DIR__ . '/../logs/mail.log';
