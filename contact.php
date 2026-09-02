@@ -5,14 +5,8 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// Start session for CSRF token - MUST be before ANY output
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-// Regenerate token on each page load to ensure freshness (optional but recommended)
-if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+// Start secure public session for CSRF protection - MUST be before ANY output
+startSecureSession(false);
 $csrfToken = $_SESSION['csrf_token'];
 
 $styleVersion = get_asset_version('assets/css/style.css');
