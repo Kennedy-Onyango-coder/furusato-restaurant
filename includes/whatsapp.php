@@ -1,10 +1,17 @@
+```php
 <?php
 /**
  * includes/whatsapp.php - WhatsApp Notification System
+ *
  * Sends formatted reservation details to the configured WhatsApp number.
  *
  * CallMeBot transport is centralised here so reservation notifications and
  * manual test messages use exactly the same request logic.
+ *
+ * Notification response handling:
+ *   HTTP 200 = accepted for immediate delivery
+ *   HTTP 210 = accepted and queued by CallMeBot
+ *   Other    = failed
  */
 
 date_default_timezone_set('Africa/Nairobi');
@@ -13,6 +20,7 @@ require_once __DIR__ . '/config.php';
 
 /**
  * Resolve the legacy admin-stored API key when no server-side secret exists.
+ *
  * Production secrets should normally come from includes/.env.php.
  *
  * @return string
@@ -40,26 +48,61 @@ function furusato_whatsapp_legacy_api_key(): string
     $wa = $stored['whatsapp'] ?? null;
 
     if (is_array($wa)) {
-        return (string) (
+        return trim((string) (
             $wa['api_key'] ??
             ($stored['whatsapp_api_key'] ?? '')
-        );
+        ));
     }
 
-    return (string) ($stored['whatsapp_api_key'] ?? '');
+    return trim((string) ($stored['whatsapp_api_key'] ?? ''));
+}
+
+/**
+ * Clean a value for use inside a WhatsApp message.
+ *
+ * Removes control characters while preserving normal line breaks where
+ * appropriate. This prevents unexpected formatting from user-submitted data.
+ *
+ * @param mixed $value
+ * @param bool $preserveNewLines
+ * @return string
+ */
+function furusato_whatsapp_clean_text($value, bool $preserveNewLines = false): string
+{
+    $text = trim((string) $value);
+
+    if ($preserveNewLines) {
+        $text = preg_replace("/\r\n|\r|\n/", "\n", $text) ?? $text;
+        $text = preg_replace("/[ \t]+/", " ", $text) ?? $text;
+        $text = preg_replace("/\n{3,}/", "\n\n", $text) ?? $text;
+    } else {
+        $text = preg_replace('/[\r\n\t]+/', ' ', $text) ?? $text;
+        $text = preg_replace('/\s{2,}/', ' ', $text) ?? $text;
+    }
+
+    return trim($text);
 }
 
 /**
  * Send a text message through CallMeBot.
  *
  * @param string $message
- * @return array{success:bool,http_code:int,response:string,error:string}
+ * @return array{
+ *     success:bool,
+ *     http_code:int,
+ *     response:string,
+ *     error:string
+ * }
  */
 function furusato_callmebot_send(string $message): array
 {
-    $phone = furusato_whatsapp_phone();
-    $apiKey = furusato_whatsapp_api_key();
+    $phone = trim((string) furusato_whatsapp_phone());
+    $apiKey = trim((string) furusato_whatsapp_api_key());
 
+    /*
+     * Fall back to the legacy settings.json API key only when the
+     * server-side configuration does not provide one.
+     */
     if ($apiKey === '') {
         $apiKey = furusato_whatsapp_legacy_api_key();
     }
@@ -72,6 +115,8 @@ function furusato_callmebot_send(string $message): array
             'error' => ''
         ];
     }
+
+    $message = trim($message);
 
     if ($message === '') {
         return [
@@ -129,11 +174,18 @@ function furusato_callmebot_send(string $message): array
 
     $responseText = is_string($response) ? trim($response) : '';
 
-   $success = (
-    in_array($httpCode, [200, 210], true) &&
-    $error === '' &&
-    $responseText !== ''
-);
+    /*
+     * CallMeBot uses:
+     *   200 = accepted normally
+     *   210 = accepted and queued
+     *
+     * Both indicate that the request reached CallMeBot successfully.
+     */
+    $success = (
+        in_array($httpCode, [200, 210], true) &&
+        $error === '' &&
+        $responseText !== ''
+    );
 
     return [
         'success' => $success,
@@ -143,81 +195,239 @@ function furusato_callmebot_send(string $message): array
     ];
 }
 
+/**
+ * Send a reservation notification to the configured WhatsApp number.
+ *
+ * @param mixed $reservation
+ * @param bool $isUpdate
+ * @return bool
+ */
 function sendWhatsAppReservation($reservation, $isUpdate = false)
 {
     if (!is_array($reservation)) {
-        error_log('WhatsApp notification failed: reservation payload is not an array.');
+        error_log(
+            'WhatsApp notification failed: reservation payload is not an array.'
+        );
+
         return false;
     }
 
-    $reservationId = (string) ($reservation['id'] ?? '?');
-    $name = (string) ($reservation['name'] ?? '');
-    $phone = (string) ($reservation['phone'] ?? '');
-    $date = (string) ($reservation['date'] ?? '');
-    $time = (string) ($reservation['time'] ?? '');
-    $guests = (int) ($reservation['guests'] ?? 0);
-    $specialRequests = (string) ($reservation['special_requests'] ?? '');
+    /*
+     * Read and normalize reservation data.
+     */
+    $reservationId = furusato_whatsapp_clean_text(
+        $reservation['id'] ?? '?'
+    );
 
+    $name = furusato_whatsapp_clean_text(
+        $reservation['name'] ?? ''
+    );
+
+    $phone = furusato_whatsapp_clean_text(
+        $reservation['phone'] ?? ''
+    );
+
+    $email = furusato_whatsapp_clean_text(
+        $reservation['email'] ?? ''
+    );
+
+    $date = furusato_whatsapp_clean_text(
+        $reservation['date'] ?? ''
+    );
+
+    $time = furusato_whatsapp_clean_text(
+        $reservation['time'] ?? ''
+    );
+
+    $guests = (int) ($reservation['guests'] ?? 0);
+
+    $specialRequests = furusato_whatsapp_clean_text(
+        $reservation['special_requests'] ?? '',
+        true
+    );
+
+    /*
+     * Use the actual submission time generated by the server.
+     */
     $submissionTime = date('h:i A');
     $submissionDate = date('l, F j, Y');
 
+    /*
+     * Validate reservation date and time before formatting.
+     */
     $reservationTimestamp = strtotime($time);
     $reservationDateTimestamp = strtotime($date);
 
-    if ($reservationTimestamp === false || $reservationDateTimestamp === false) {
+    if (
+        $reservationTimestamp === false ||
+        $reservationDateTimestamp === false
+    ) {
         error_log(
             'WhatsApp notification failed for reservation ' .
             $reservationId .
             ': invalid reservation date/time.'
         );
+
         return false;
     }
 
-    $reservationTimeFormatted = date('h:i A', $reservationTimestamp);
-    $reservationDateFormatted = date('l, F j, Y', $reservationDateTimestamp);
-
-    $message = (
-        $isUpdate
-            ? "RESERVATION UPDATED - Furusato\n"
-            : "NEW RESERVATION - Furusato\n"
+    $reservationTimeFormatted = date(
+        'h:i A',
+        $reservationTimestamp
     );
 
-    $message .= "----------------------------------------\n";
-    $message .= "Guest: " . $name . "\n";
-    $message .= "Phone: " . $phone . "\n";
-    $message .= "----------------------------------------\n";
-    $message .= "Date: " . $reservationDateFormatted . "\n";
-    $message .= "Time: " . $reservationTimeFormatted . " (Nairobi Time)\n";
-    $message .= "Party: " . $guests . " people\n";
-    $message .= "----------------------------------------\n";
+    $reservationDateFormatted = date(
+        'l, F j, Y',
+        $reservationDateTimestamp
+    );
 
-    if ($specialRequests !== '') {
-        $message .= "Special Requests:\n";
-        $message .= "  " . $specialRequests . "\n";
-        $message .= "----------------------------------------\n";
+    /*
+     * Build a clean, professional WhatsApp notification.
+     *
+     * Important:
+     * Do NOT use "Location:" here.
+     * CallMeBot testing showed that this specific label caused HTTP 403.
+     * "Venue:" is intentionally used instead.
+     */
+    $message = (
+        $isUpdate
+            ? "RESERVATION UPDATED\n"
+            : "NEW RESERVATION\n"
+    );
+
+    $message .= "FURUSATO JAPANESE RESTAURANT\n";
+    $message .= "================================\n";
+
+    /*
+     * Reservation reference and status.
+     */
+    $message .= "Reservation ID: " .
+        ($reservationId !== '' ? $reservationId : '?') .
+        "\n";
+
+    $message .= "Status: PENDING\n";
+    $message .= "--------------------------------\n";
+
+    /*
+     * Guest details.
+     */
+    $message .= "GUEST DETAILS\n";
+
+    $message .= "Name: " .
+        ($name !== '' ? $name : 'Not provided') .
+        "\n";
+
+    $message .= "Phone: " .
+        ($phone !== '' ? $phone : 'Not provided') .
+        "\n";
+
+    /*
+     * Only show the email address when the customer supplied one.
+     */
+    if ($email !== '') {
+        $message .= "Email: " . $email . "\n";
     }
 
-    $message .= "Reservation ID: " . $reservationId . "\n";
-    $message .= "Submitted: " . $submissionTime . " on " . $submissionDate . " (Nairobi Time)\n";
-    $message .= "----------------------------------------\n";
-    $message .= "Venue: Ring Road Parklands, Westlands, Nairobi\n";
-    $message .= "Restaurant: 0722 488 706 | 0734 639 203\n";
-    $message .= "Open Daily: 12pm - 9pm";
+    $message .= "--------------------------------\n";
 
+    /*
+     * Reservation details.
+     */
+    $message .= "RESERVATION DETAILS\n";
+
+    $message .= "Date: " .
+        $reservationDateFormatted .
+        "\n";
+
+    $message .= "Time: " .
+        $reservationTimeFormatted .
+        " (Nairobi Time)\n";
+
+    $message .= "Guests: " .
+        $guests .
+        "\n";
+
+    /*
+     * Special requests are optional.
+     */
+    if ($specialRequests !== '') {
+        $message .= "--------------------------------\n";
+        $message .= "SPECIAL REQUEST\n";
+        $message .= $specialRequests . "\n";
+    }
+
+    /*
+     * Restaurant information.
+     *
+     * "Venue:" is deliberately used instead of "Location:"
+     * because CallMeBot previously returned HTTP 403 when the
+     * literal "Location:" label was included.
+     */
+    $message .= "================================\n";
+    $message .= "VENUE\n";
+    $message .= "Ring Road Parklands, Westlands, Nairobi\n";
+
+    $message .= "--------------------------------\n";
+    $message .= "CONTACT\n";
+    $message .= "0722 488 706 | 0734 639 203\n";
+    $message .= "Open Daily: 12:00 PM - 9:00 PM\n";
+
+    $message .= "--------------------------------\n";
+    $message .= "SUBMITTED\n";
+    $message .= $submissionTime .
+        " on " .
+        $submissionDate .
+        " (Nairobi Time)\n";
+
+    $message .= "================================";
+
+    /*
+     * Send through the centralised CallMeBot transport.
+     */
     $result = furusato_callmebot_send($message);
 
-    if ($result['success']) {
+    /*
+     * HTTP 200:
+     * CallMeBot accepted the message normally.
+     */
+    if (
+        $result['success'] &&
+        $result['http_code'] === 200
+    ) {
         error_log(
             'WhatsApp notification sent successfully for reservation: ' .
             $reservationId
         );
+
         return true;
     }
 
+    /*
+     * HTTP 210:
+     * CallMeBot accepted the message but placed it in its queue.
+     *
+     * This is NOT treated as an immediate delivery confirmation.
+     */
+    if (
+        $result['success'] &&
+        $result['http_code'] === 210
+    ) {
+        error_log(
+            'WhatsApp notification queued by CallMeBot for reservation: ' .
+            $reservationId
+        );
+
+        return true;
+    }
+
+    /*
+     * Log genuine failures for troubleshooting.
+     */
     $responseForLog = $result['response'];
 
     if (strlen($responseForLog) > 500) {
-        $responseForLog = substr($responseForLog, 0, 500) . '...';
+        $responseForLog =
+            substr($responseForLog, 0, 500) . '...';
     }
 
     error_log(
@@ -226,9 +436,17 @@ function sendWhatsAppReservation($reservation, $isUpdate = false)
         ': HTTP ' .
         $result['http_code'] .
         ' - cURL: ' .
-        ($result['error'] !== '' ? $result['error'] : 'none') .
+        (
+            $result['error'] !== ''
+                ? $result['error']
+                : 'none'
+        ) .
         ' - Response: ' .
-        ($responseForLog !== '' ? $responseForLog : '[empty]')
+        (
+            $responseForLog !== ''
+                ? $responseForLog
+                : '[empty]'
+        )
     );
 
     return false;
@@ -238,7 +456,12 @@ function sendWhatsAppReservation($reservation, $isUpdate = false)
  * Send a simple WhatsApp test message.
  *
  * @param string $message
- * @return array{success:bool,response:string,http_code:int,error:string}
+ * @return array{
+ *     success:bool,
+ *     response:string,
+ *     http_code:int,
+ *     error:string
+ * }
  */
 function sendWhatsAppTest($message)
 {
@@ -252,3 +475,4 @@ function sendWhatsAppTest($message)
     ];
 }
 ?>
+```
