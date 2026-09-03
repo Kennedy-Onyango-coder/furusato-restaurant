@@ -748,46 +748,27 @@ function respondAndNotify(
     array $reservationsToNotify,
     bool $isUpdate
 ): void {
+    /*
+     * Complete notifications BEFORE finishing the HTTP request.
+     *
+     * Previously fastcgi_finish_request() was called before the WhatsApp
+     * notification loop. On some PHP-FPM environments this can terminate
+     * or otherwise interfere with code that follows it.
+     *
+     * WhatsApp and email are therefore deliberately completed first.
+     */
+
     while (ob_get_level()) {
         ob_end_clean();
     }
 
-    http_response_code(200);
-
-    header(
-        'Content-Type: application/json; charset=utf-8'
-    );
-
-    header(
-        'Cache-Control: no-store, no-cache, must-revalidate'
-    );
-
-    echo json_encode(
-        $responseData,
-        JSON_UNESCAPED_UNICODE
-    );
-
-    flush();
-
-    // Free the session before notification processing.
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_write_close();
     }
 
-    if (function_exists('fastcgi_finish_request')) {
-        try {
-            fastcgi_finish_request();
-        } catch (Throwable $e) {
-            // Best effort only.
-        }
-    }
-
     foreach ($reservationsToNotify as $reservation) {
         try {
-            sendWhatsAppReservation(
-                $reservation,
-                $isUpdate
-            );
+            sendWhatsAppReservation($reservation, $isUpdate);
         } catch (Throwable $e) {
             error_log(
                 'WhatsApp notification failed for ' .
@@ -799,9 +780,7 @@ function respondAndNotify(
 
         if (!$isUpdate) {
             try {
-                sendReservationEmail(
-                    buildEmailData($reservation)
-                );
+                sendReservationEmail(buildEmailData($reservation));
             } catch (Throwable $e) {
                 error_log(
                     'Email notification failed for ' .
@@ -813,6 +792,16 @@ function respondAndNotify(
         }
     }
 
+    /*
+     * Only send the HTTP response after notification processing has
+     * completed. This keeps the request lifecycle predictable on
+     * Hostinger/PHP-FPM.
+     */
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+
+    echo json_encode($responseData, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
