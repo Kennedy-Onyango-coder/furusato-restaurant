@@ -6,17 +6,40 @@
 
 require_once __DIR__ . '/../includes/functions.php';
 
-session_start();
-
-// Set JSON headers
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
-// Check authentication
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+/*
+ * Hardened authentication: secure session params + IP/User-Agent binding +
+ * inactivity timeout (raw session_start() bypassed all of these).
+ */
+if (!furusato_admin_authenticated()) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized. Please log in again.']);
     exit;
+}
+
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+
+/*
+ * Every state-changing operation requires the admin CSRF token (header form,
+ * matching the other admin APIs). Read-only actions (list/download/export)
+ * stay token-free so direct download links keep working.
+ */
+$mutatingActions = ['create', 'restore', 'delete', 'import'];
+if (in_array($action, $mutatingActions, true)) {
+    $csrfIn = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (
+        !is_string($csrfIn) ||
+        $csrfIn === '' ||
+        !isset($_SESSION['csrf_token']) ||
+        !hash_equals($_SESSION['csrf_token'], $csrfIn)
+    ) {
+        logAudit('MENU_BACKUP_CSRF_FAILED', "Action: {$action}, IP: " . getClientIP());
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Invalid security token. Please refresh the page and try again.']);
+        exit;
+    }
 }
 
 // Create backups directory if not exists
@@ -25,8 +48,10 @@ if (!file_exists($backupDir)) {
     mkdir($backupDir, 0755, true);
 }
 
-$action = isset($_GET['action']) ? $_GET['action'] : '';
 
+/**
+ * Helper function to count total items in menu
+ */
 /**
  * Helper function to count total items in menu
  */
@@ -70,6 +95,7 @@ if ($action === 'create') {
     ];
     
     if (file_put_contents($backupFile, json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        logAudit('MENU_BACKUP_CREATED', 'File: ' . basename($backupFile));
         echo json_encode([
             'success' => true,
             'message' => 'Backup created successfully',
@@ -145,6 +171,7 @@ if ($action === 'restore' && isset($_GET['file'])) {
     
     // Restore
     setJsonData('menu', $backupData['data']);
+    logAudit('MENU_BACKUP_RESTORED', 'File: ' . $filename);
     
     echo json_encode([
         'success' => true, 
@@ -181,6 +208,7 @@ if ($action === 'delete' && isset($_GET['file'])) {
     $backupFile = $backupDir . $filename;
     
     if (file_exists($backupFile) && unlink($backupFile)) {
+        logAudit('MENU_BACKUP_DELETED', 'File: ' . $filename);
         echo json_encode(['success' => true, 'message' => 'Backup deleted']);
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to delete backup']);
@@ -263,6 +291,7 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Import
     setJsonData('menu', $menuData);
+    logAudit('MENU_IMPORTED', 'From: ' . basename($_FILES['backup_file']['name']) . ', Pre-import backup: ' . basename($preImportBackup));
     
     echo json_encode([
         'success' => true,

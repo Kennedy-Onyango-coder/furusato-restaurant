@@ -355,6 +355,10 @@ if ($action === 'change_password') {
         sendAuthError('Unauthorized', 401);
     }
     
+    if (!validateLoginCsrf()) {
+        sendAuthError('Invalid security token. Please refresh the page and try again.', 403);
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
     $currentPassword = $input['current_password'] ?? '';
     $newPassword = $input['new_password'] ?? '';
@@ -395,6 +399,10 @@ if ($action === 'setup_2fa') {
         sendAuthError('Unauthorized', 401);
     }
     
+    if (!validateLoginCsrf()) {
+        sendAuthError('Invalid security token. Please refresh the page and try again.', 403);
+    }
+
     require_once __DIR__ . '/../includes/totp.php';
     
     $admin = getJsonData('admin');
@@ -427,6 +435,10 @@ if ($action === 'enable_2fa') {
         sendAuthError('Unauthorized', 401);
     }
     
+    if (!validateLoginCsrf()) {
+        sendAuthError('Invalid security token. Please refresh the page and try again.', 403);
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
     $code = isset($input['code']) ? preg_replace('/[^0-9]/', '', $input['code']) : '';
     
@@ -468,6 +480,10 @@ if ($action === 'disable_2fa') {
         sendAuthError('Unauthorized', 401);
     }
     
+    if (!validateLoginCsrf()) {
+        sendAuthError('Invalid security token. Please refresh the page and try again.', 403);
+    }
+
     $admin = getJsonData('admin');
     $admin['totpEnabled'] = false;
     $admin['backup_codes'] = [];

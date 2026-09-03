@@ -3,8 +3,9 @@
  * admin/index.php — Entry point for admin panel
  * Redirects to dashboard.php
  */
-session_start();
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+require_once __DIR__ . '/../includes/functions.php';
+
+if (!furusato_admin_authenticated()) {
     header('Location: /admin/login.php');
     exit;
 }
