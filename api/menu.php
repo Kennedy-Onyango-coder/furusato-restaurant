@@ -440,8 +440,16 @@ try {
                             $item['name'] = $name;
                             $item['description'] = $description;
                             $item['price'] = $price;
-                            if ($badge) $item['badge'] = $badge;
+                            if ($badge) {
+                                $item['badge'] = $badge;
+                            } else {
+                                unset($item['badge']);
+                            }
                             if ($imagePath) $item['image'] = $imagePath;
+                            // Visibility toggle (defaults to keeping the current value).
+                            if (isset($_POST['visible'])) {
+                                $item['visible'] = filter_var($_POST['visible'], FILTER_VALIDATE_BOOLEAN);
+                            }
                             if ($originalPrice && $originalPrice > $price) {
                                 $item['original_price'] = $originalPrice;
                             } else {
@@ -460,8 +468,16 @@ try {
                                     $item['name'] = $name;
                                     $item['description'] = $description;
                                     $item['price'] = $price;
-                                    if ($badge) $item['badge'] = $badge;
+                                    if ($badge) {
+                                        $item['badge'] = $badge;
+                                    } else {
+                                        unset($item['badge']);
+                                    }
                                     if ($imagePath) $item['image'] = $imagePath;
+                                    // Visibility toggle (defaults to keeping the current value).
+                                    if (isset($_POST['visible'])) {
+                                        $item['visible'] = filter_var($_POST['visible'], FILTER_VALIDATE_BOOLEAN);
+                                    }
                                     if ($originalPrice && $originalPrice > $price) {
                                         $item['original_price'] = $originalPrice;
                                     } else {

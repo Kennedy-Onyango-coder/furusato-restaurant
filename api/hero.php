@@ -32,9 +32,11 @@ if (!startSecureSession(true)) {
     jsonResponse(['error' => 'Unauthorized - Please login first'], 401);
 }
 
-// Verify CSRF token
-$csrfIn = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $csrfIn)) {
+// Verify CSRF token. Accept the token from the header or the POST body,
+// mirroring how the rest of the admin APIs read it.
+$csrfIn = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
+if (!isset($_SESSION['csrf_token']) || !is_string($csrfIn) || !hash_equals($_SESSION['csrf_token'], $csrfIn)) {
+    logAudit('HERO_CSRF_FAILED', "IP: " . getClientIP());
     jsonResponse(['error' => 'Invalid security token'], 403);
 }
 
@@ -153,10 +155,41 @@ if ($method === 'POST') {
 
 if ($method === 'PATCH') {
     $input = json_decode(file_get_contents('php://input'), true);
-    if (isset($input['slides'])) {
-        $hero['slides'] = $input['slides'];
+    if (isset($input['slides']) && is_array($input['slides'])) {
+        /*
+         * Hardened bulk update: every slide is rebuilt through an explicit
+         * field whitelist so arbitrary client-supplied keys (or nested
+         * structures) can never enter data/hero.json and reach the
+         * public website.
+         */
+        $cleanSlides = [];
+        $allowedText = ['id', 'headline', 'subtext', 'buttonText', 'buttonLink', 'image'];
+        foreach ($input['slides'] as $slide) {
+            if (!is_array($slide) || empty($slide['id']) || !is_string($slide['id'])) {
+                continue;
+            }
+            $clean = [];
+            foreach ($allowedText as $field) {
+                if (isset($slide[$field]) && is_scalar($slide[$field])) {
+                    $clean[$field] = sanitize((string) $slide[$field]);
+                }
+            }
+            $clean['enabled'] = !empty($slide['enabled']);
+            $clean['order'] = isset($slide['order']) ? max(0, (int) $slide['order']) : 999;
+            $cleanSlides[] = $clean;
+        }
+
+        if (empty($cleanSlides)) {
+            jsonResponse(['error' => 'Invalid payload: no valid slides'], 400);
+        }
+
+        usort($cleanSlides, function ($a, $b) {
+            return ($a['order'] ?? 999) <=> ($b['order'] ?? 999);
+        });
+
+        $hero['slides'] = $cleanSlides;
         setJsonData('hero', $hero);
-        logAudit('HERO_UPDATED');
+        logAudit('HERO_UPDATED', "IP: " . getClientIP());
         jsonResponse(['success' => true]);
     }
     jsonResponse(['error' => 'Invalid payload'], 400);

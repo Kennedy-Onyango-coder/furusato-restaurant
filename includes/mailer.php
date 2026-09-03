@@ -1,4 +1,3 @@
-```php
 <?php
 /**
  * includes/mailer.php - Furusato Restaurant Email System
@@ -2083,7 +2082,7 @@ function sendTestEmail(
     line-height:18px;
     color:#aaa49c;
 ">
-    Furusato Japanese Restaurant · Nairobi
+    Furusato Japanese Restaurant Â· Nairobi
 </td>
 </tr>
 
@@ -2110,4 +2109,3 @@ function sendTestEmail(
     );
 }
 ?>
-```

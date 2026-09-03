@@ -277,13 +277,33 @@ if ($method === 'GET') {
     
     $settings = getSettings();
     
-    // Return only safe public data (hide API key)
+    // Return only safe public data (hide API key). The flat settings.json
+    // keys are the source of truth consumed by the public website, so merge
+    // them over the legacy nested defaults.
+    $restaurant = is_array($settings['restaurant'] ?? null) ? $settings['restaurant'] : [];
+    $restaurant['name']    = $settings['name']    ?? ($restaurant['name']    ?? 'Furusato Japanese Restaurant');
+    $restaurant['phone']   = $settings['phone']   ?? ($restaurant['phone']   ?? '');
+    $restaurant['email']   = $settings['email']   ?? ($restaurant['email']   ?? '');
+    $restaurant['address'] = $settings['address'] ?? ($restaurant['address'] ?? '');
+    $restaurant['hours']   = $settings['hours']   ?? ($restaurant['hours']   ?? '');
+    $restaurant['days']    = $settings['days']    ?? ($restaurant['days']    ?? '');
+
+    $waPhone = '';
+    if (is_array($settings['whatsapp'] ?? null)) {
+        $waPhone = (string) ($settings['whatsapp']['phone_number'] ?? '');
+    } elseif (is_string($settings['whatsapp'] ?? null) && $settings['whatsapp'] !== '') {
+        $waPhone = (string) $settings['whatsapp'];
+    }
+    if ($waPhone === '' && !empty($settings['whatsapp_number'])) {
+        $waPhone = (string) $settings['whatsapp_number'];
+    }
+
     sendSettingsResponse([
         'success' => true,
-        'restaurant' => $settings['restaurant'],
+        'restaurant' => $restaurant,
         'whatsapp' => [
-            'phone_number' => $settings['whatsapp']['phone_number'] ?? '',
-            'configured' => !empty($settings['whatsapp']['api_key'])
+            'phone_number' => $waPhone,
+            'configured' => (trim((string) furusato_whatsapp_api_key()) !== '')
         ]
     ]);
 }
@@ -325,7 +345,10 @@ if ($method === 'POST') {
             $restaurantSettings = $input['settings'];
             
             if (isset($restaurantSettings['name'])) {
-                $settings['restaurant']['name'] = sanitizeSetting($restaurantSettings['name'], MAX_NAME_LENGTH);
+                $name = sanitizeSetting($restaurantSettings['name'], MAX_NAME_LENGTH);
+                $settings['restaurant']['name'] = $name;
+                // Mirror to the flat key consumed by the public website.
+                $settings['name'] = $name;
                 $changes[] = 'name';
             }
             
@@ -335,6 +358,8 @@ if ($method === 'POST') {
                     sendSettingsResponse(['success' => false, 'error' => 'Invalid phone number format. Use international format (e.g., +254722488706)'], 400);
                 }
                 $settings['restaurant']['phone'] = $phone;
+                // Mirror to the flat key consumed by the public website.
+                $settings['phone'] = $phone;
                 $changes[] = 'phone';
             }
             
@@ -344,12 +369,43 @@ if ($method === 'POST') {
                     sendSettingsResponse(['success' => false, 'error' => 'Invalid email address'], 400);
                 }
                 $settings['restaurant']['email'] = $email;
+                // Mirror to the flat key consumed by the public website.
+                $settings['email'] = $email;
                 $changes[] = 'email';
             }
             
             if (isset($restaurantSettings['address'])) {
-                $settings['restaurant']['address'] = sanitizeSetting($restaurantSettings['address'], MAX_ADDRESS_LENGTH);
+                $address = sanitizeSetting($restaurantSettings['address'], MAX_ADDRESS_LENGTH);
+                $settings['restaurant']['address'] = $address;
+                // Mirror to the flat key consumed by the public website.
+                $settings['address'] = $address;
                 $changes[] = 'address';
+            }
+
+            if (isset($restaurantSettings['hours'])) {
+                $hours = sanitizeSetting($restaurantSettings['hours'], 100);
+                $settings['hours'] = $hours;
+                $changes[] = 'hours';
+            }
+
+            if (isset($restaurantSettings['days'])) {
+                $days = sanitizeSetting($restaurantSettings['days'], 100);
+                $settings['days'] = $days;
+                $changes[] = 'days';
+            }
+
+            if (isset($restaurantSettings['whatsapp']) && $restaurantSettings['whatsapp'] !== '') {
+                $waNumber = sanitizeSetting($restaurantSettings['whatsapp'], MAX_PHONE_LENGTH);
+                if (!validatePhoneNumber($waNumber)) {
+                    sendSettingsResponse(['success' => false, 'error' => 'Invalid WhatsApp number format. Use international format (e.g., +254734639203)'], 400);
+                }
+                // Keep the legacy flat digits-only key in sync (consumed by
+                // get_whatsapp_number() and the public website).
+                $settings['whatsapp'] = preg_replace('/[^0-9]/', '', $waNumber);
+                if (!isset($settings['whatsapp_number'])) {
+                    $settings['whatsapp_number'] = $settings['whatsapp'];
+                }
+                $changes[] = 'whatsapp';
             }
         }
         
@@ -387,6 +443,12 @@ if ($method === 'POST') {
                     sendSettingsResponse(['success' => false, 'error' => 'Invalid phone number format. Use international format (e.g., +254734639203)'], 400);
                 }
                 $settings['whatsapp']['phone_number'] = $phoneNumber;
+                // Mirror to the legacy flat digits-only key consumed by
+                // get_whatsapp_number() and the public website.
+                $settings['whatsapp'] = preg_replace('/[^0-9]/', '', $phoneNumber);
+                if (!isset($settings['whatsapp_number'])) {
+                    $settings['whatsapp_number'] = $settings['whatsapp'];
+                }
                 $changes[] = 'phone_number';
             }
         }
@@ -436,7 +498,33 @@ if ($method === 'POST') {
         
         sendSettingsResponse($result);
     }
-    
+
+    // ============================================================
+    // Test Email (uses the configured SMTP / mail transport)
+    // ============================================================
+    if ($action === 'test_email') {
+        $testEmail = sanitizeSetting($input['email'] ?? '', MAX_EMAIL_LENGTH);
+
+        if (!validateEmail($testEmail)) {
+            sendSettingsResponse(['success' => false, 'error' => 'A valid email address is required'], 400);
+        }
+
+        require_once __DIR__ . '/../includes/mailer.php';
+
+        $sent = sendTestEmail($testEmail);
+
+        if ($sent) {
+            logAudit('EMAIL_TEST_SENT', "To: {$testEmail}, IP: {$clientIP}");
+            sendSettingsResponse(['success' => true, 'message' => 'Test email dispatched. Check the inbox (and spam folder).']);
+        }
+
+        logAudit('EMAIL_TEST_FAILED', "To: {$testEmail}, IP: {$clientIP}");
+        sendSettingsResponse([
+            'success' => false,
+            'error' => 'Test email could not be sent. SMTP is ' . (furusato_smtp_configured() ? 'configured' : 'NOT configured') . ' on this server; check logs/mail.log.'
+        ]);
+    }
+
     // ============================================================
     // Legacy support for simple key-value updates
     // ============================================================

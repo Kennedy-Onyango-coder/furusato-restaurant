@@ -1,4 +1,3 @@
-```php
 <?php
 /**
  * includes/whatsapp.php - WhatsApp Notification System
@@ -475,4 +474,3 @@ function sendWhatsAppTest($message)
     ];
 }
 ?>
-```
