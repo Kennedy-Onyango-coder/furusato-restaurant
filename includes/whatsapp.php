@@ -129,11 +129,11 @@ function furusato_callmebot_send(string $message): array
 
     $responseText = is_string($response) ? trim($response) : '';
 
-    $success = (
-        $httpCode === 200 &&
-        $error === '' &&
-        $responseText !== ''
-    );
+   $success = (
+    in_array($httpCode, [200, 210], true) &&
+    $error === '' &&
+    $responseText !== ''
+);
 
     return [
         'success' => $success,
@@ -200,7 +200,7 @@ function sendWhatsAppReservation($reservation, $isUpdate = false)
     $message .= "Reservation ID: " . $reservationId . "\n";
     $message .= "Submitted: " . $submissionTime . " on " . $submissionDate . " (Nairobi Time)\n";
     $message .= "----------------------------------------\n";
-    $message .= "Location: Ring Road Parklands, Westlands, Nairobi\n";
+    $message .= "Venue: Ring Road Parklands, Westlands, Nairobi\n";
     $message .= "Restaurant: 0722 488 706 | 0734 639 203\n";
     $message .= "Open Daily: 12pm - 9pm";
 
