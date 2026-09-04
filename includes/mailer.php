@@ -2082,7 +2082,7 @@ function sendTestEmail(
     line-height:18px;
     color:#aaa49c;
 ">
-    Furusato Japanese Restaurant Â· Nairobi
+    Furusato Japanese Restaurant · Nairobi
 </td>
 </tr>
 
