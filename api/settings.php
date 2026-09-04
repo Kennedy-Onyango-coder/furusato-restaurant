@@ -85,8 +85,9 @@ function getSettings() {
             'address' => 'Nairobi, Kenya'
         ];
     }
-    if (!isset($data['whatsapp'])) {
-        $data['whatsapp'] = ['api_key' => '', 'phone_number' => '+254734639203'];
+    if (!is_array($data['whatsapp'] ?? null)) {
+        $flatWhatsapp = (string) ($data['whatsapp'] ?? '');
+        $data['whatsapp'] = ['api_key' => '', 'phone_number' => $flatWhatsapp];
     }
     
     return $data;

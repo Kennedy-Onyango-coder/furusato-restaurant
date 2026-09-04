@@ -5,14 +5,14 @@
    Shared client foundation for the dashboard: API client with CSRF handling,
    safe DOM helpers, toasts, accessible modals/confirm dialogs, the session
    inactivity watchdog and the section router. Feature logic lives in
-   admin/dashboard.php and consumes this file through window.FursatoAdmin.
+   admin/dashboard.php and consumes this file through window.FurusatoAdmin.
    ========================================================================== */
 
 (function () {
     'use strict';
 
     var App = {};
-    window.FursatoAdmin = App;
+    window.FurusatoAdmin = App;
 
     /* --- Safe DOM helpers -------------------------------------------------- */
 
