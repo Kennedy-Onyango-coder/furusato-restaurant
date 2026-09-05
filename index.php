@@ -8,6 +8,7 @@ header("Expires: 0");
 $styleVersion    = get_asset_version('assets/css/style.css');
 $animationsVersion = get_asset_version('assets/css/animations.css');
 $mainJsVersion   = get_asset_version('assets/js/main.js');
+$heroJsVersion   = get_asset_version('assets/js/hero.js');
 
 // Get settings for dynamic content
 $settings = getJsonData('settings');
@@ -22,10 +23,6 @@ $restaurantAddress = $settings['address'] ?? 'Ring Road Parklands, Westlands, Na
 $waGeneralMsg = "Hello Furusato Japanese Restaurant,\n\nI have an enquiry.\n\nThank you.";
 $waReservationMsg = "Hello Furusato Japanese Restaurant,\n\nI would like to make a reservation.\n\nThank you.";
 $waDeliveryMsg = "Hello Furusato Japanese Restaurant,\n\nI would like to enquire about delivery.\n\nThank you.";
-
-// Get review count from reservations data for schema
-$reservations = getJsonData('reservations');
-$reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -102,13 +99,6 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
       "hasMap": "https://maps.google.com/?q=Ring+Road+Parklands+Westlands+Nairobi",
       "foundingDate": "2001-05-01",
       "numberOfEmployees": "50",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "<?= $reviewCount ?>",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
       "sameAs": [
         "https://www.facebook.com/FurusatoNairobi",
         "https://www.instagram.com/furusato_japanese_restaurant"
@@ -1168,7 +1158,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
     </div>
     <!-- Slide 4 -->
     <div class="hero-slide">
-        <div class="hero-slide-bg" style="background-image:url('/assets/images/interior.png');"></div>
+        <div class="hero-slide-bg" style="background-image:url('/assets/images/interior.webp');"></div>
         <div class="hero-slide-overlay"></div>
     </div>
 
@@ -1244,7 +1234,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
                     <?php
                     $img = '/assets/images/2001.jpeg';
                     if (file_exists($_SERVER['DOCUMENT_ROOT'] . $img)): ?>
-                        <img src="<?= $img ?>" alt="Furusato founders, Est. 2001" loading="lazy">
+                        <img src="/assets/images/2001.jpeg" srcset="/assets/images/2001-480.jpg 480w, /assets/images/2001-960.jpg 960w, /assets/images/2001.jpeg 1600w" sizes="(max-width: 900px) 100vw, 50vw" alt="Furusato founders, Est. 2001" loading="lazy">
                     <?php else: ?>
                         <div class="philosophy-img-placeholder">Furusato Founders<br>Est. 2001</div>
                     <?php endif; ?>
@@ -1316,7 +1306,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
             </div>
             <div class="reveal-right">
                 <div class="promise-img-wrap">
-                    <img src="/assets/images/exterior.png" alt="Furusato Restaurant exterior" loading="lazy">
+                    <img src="/assets/images/exterior.webp" srcset="/assets/images/exterior-480.webp 480w, /assets/images/exterior-960.webp 960w, /assets/images/exterior.webp 1536w" sizes="(max-width: 900px) 100vw, 50vw" alt="Furusato Restaurant exterior" loading="lazy">
                 </div>
             </div>
         </div>
@@ -1347,7 +1337,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
 
 <!-- ── STORY TEASER ── -->
 <section class="story-teaser">
-    <div class="story-teaser-bg" style="background-image:url('/assets/images/interior.png');"></div>
+    <div class="story-teaser-bg" style="background-image:url('/assets/images/interior.webp');"></div>
     <div class="container">
         <div class="story-teaser-inner">
             <div class="reveal-right" style="order:2;">
@@ -1514,6 +1504,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
 </a>
 
 <script src="/assets/js/main.js?v=<?= $mainJsVersion ?>"></script>
+<script src="/assets/js/hero.js?v=<?= $heroJsVersion ?>"></script>
 <script>
 /* ── Scroll Reveal ── */
 (function(){
@@ -1525,25 +1516,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
     document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>obs.observe(el));
 })();
 
-/* ── Hero Slideshow ── */
-(function(){
-    const slides = document.querySelectorAll('.hero-slide');
-    const dots   = document.querySelectorAll('.hero-dot');
-    let cur = 0, timer;
-    function show(i){
-        slides.forEach(s=>s.classList.remove('active'));
-        dots.forEach(d=>d.classList.remove('active'));
-        cur = (i+slides.length)%slides.length;
-        slides[cur].classList.add('active');
-        dots[cur].classList.add('active');
-    }
-    function next(){show(cur+1);}
-    document.querySelector('.hero-arrow-prev')?.addEventListener('click',()=>{show(cur-1);reset();});
-    document.querySelector('.hero-arrow-next')?.addEventListener('click',()=>{next();reset();});
-    dots.forEach((d,i)=>d.addEventListener('click',()=>{show(i);reset();}));
-    function reset(){clearInterval(timer);timer=setInterval(next,5000);}
-    timer=setInterval(next,5000);
-})();
+/* Hero Slideshow: consolidated into /assets/js/hero.js (enqueued above) */
 
 /* ── Stats Counter ── */
 (function(){
@@ -1575,7 +1548,7 @@ $reviewCount = count($reservations) > 0 ? min(count($reservations), 325) : 125;
     const grid=document.getElementById('dishes-grid');
     if(!grid) return;
     function esc(s){if(!s) return '';return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-    fetch('/api/menu.php?popular=true&v='+Date.now())
+    fetch('/api/menu.php?popular=true')
         .then(r=>{if(!r.ok) throw new Error('HTTP '+r.status); return r.json();})
         .then(data=>{
             let items=[];

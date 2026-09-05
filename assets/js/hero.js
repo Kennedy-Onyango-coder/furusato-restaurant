@@ -1,7 +1,7 @@
 /* ============================================================
    Furusato Japanese Restaurant — Hardcoded Hero Slideshow
    Pure crossfade carousel; no API fetch.
-   Uses the 8 hardcoded slides from index.php.
+   Uses the hardcoded slides from index.php.
    ============================================================ */
 
 (function () {
@@ -9,8 +9,12 @@
 
   var CONFIG = {
     autoAdvanceInterval: 5000,  // 5 s per slide
-    crossfadeDuration:    800,  // ms
+    crossfadeDuration:    1200, // ms — must match CSS: .hero-slide { transition: opacity 1.2s ease }
   };
+
+  var reducedMotion =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var state = {
     currentIndex:  0,
@@ -81,12 +85,14 @@
 
   /* ── Auto advance ── */
   function initAutoAdvance() {
+    if (reducedMotion) return; // respect prefers-reduced-motion: no autoplay
     state.timer = setInterval(function () {
       if (!state.isPaused) goToSlide(state.currentIndex + 1);
     }, CONFIG.autoAdvanceInterval);
   }
 
   function resetAutoAdvance() {
+    if (reducedMotion) return;
     clearInterval(state.timer);
     state.timer = setInterval(function () {
       if (!state.isPaused) goToSlide(state.currentIndex + 1);

@@ -333,7 +333,7 @@
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    fetch("/api/menu.php?v=" + Date.now(), { signal: controller.signal })
+    fetch("/api/menu.php", { signal: controller.signal })
       .then(function(res) { 
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -544,7 +544,7 @@
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     
-    fetch('/api/menu.php?popular=true&v=' + Date.now(), { signal: controller.signal })
+    fetch('/api/menu.php?popular=true', { signal: controller.signal })
       .then(function(response) {
         clearTimeout(timeoutId);
         if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -785,7 +785,6 @@
     initServiceWorker();
     initFavicon();
     initVideoPoster();
-    initPopularDishes();
     initLazyLoad();
     
     console.log("[Furusato] All modules initialized");

@@ -565,7 +565,7 @@ $mainJsVersion = get_asset_version('assets/js/main.js');
 
 <!-- ══════ CINEMATIC FULL-WIDTH — Restaurant at night ══════ -->
 <div style="height:420px; overflow:hidden; position:relative;">
-  <img src="/assets/images/interior.png"
+  <img src="/assets/images/interior.webp"
        alt="Furusato restaurant at night"
        style="width:100%; height:100%; object-fit:cover; display:block;">
   <div style="position:absolute; inset:0; background:linear-gradient(0deg, rgba(26,26,26,0.72) 0%, rgba(26,26,26,0.1) 55%, transparent 100%);"></div>
