@@ -7,9 +7,19 @@ data/
 # Runtime logs
 logs/
 # Production uploads (admin-managed media) - server is source of truth
+# assets/images/menu/ and assets/images/gallery/ are 100% admin-managed.
 assets/images/menu/
-assets/images/hero/
 assets/images/gallery/
+# assets/images/hero/ is SHARED: it also holds repo-controlled static hero
+# assets (out-furusato.webp, sushi-hero.webp, crafted.jpg, ...) that MUST
+# deploy. Only exclude admin-GENERATED upload filenames. Every admin upload
+# goes through convertToWebP() (includes/image-processor.php) which always
+# names files "<name>_<16-hex-random>.webp" (random_bytes(8)). Static repo
+# assets never contain "_" + exactly 16 hex chars before ".webp".
+# NOTE: rsync has no --delete, so server-only files (e.g. legacy slide1.jpg)
+# can never be deleted by a deploy; they are simply never overwritten either
+# because no tracked file shares their names.
+/assets/images/hero/*_[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].webp
 # Git + CI metadata must never land in public_html
 .git/
 .github/

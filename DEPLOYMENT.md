@@ -37,7 +37,8 @@ never delete or overwrite production state.
 |---|---|
 | `data/` | JSON "database": settings, menu, hero, specials, admin, reservations, audit, rate limits, `data/backups/` |
 | `logs/` | Runtime logs |
-| `assets/images/menu/`, `assets/images/hero/`, `assets/images/gallery/` | Admin-uploaded media — the **server** is the source of truth |
+| `assets/images/menu/`, `assets/images/gallery/` | Admin-uploaded media — the **server** is the source of truth |
+| `assets/images/hero/` (admin uploads only) | Admin-uploaded media — the **server** is the source of truth. Static repo-controlled hero assets (`out-furusato.webp`, `sushi-hero.webp`, …) **do deploy**; only admin-generated filenames (`<name>_<16hex>.webp` from `convertToWebP()`) are excluded. rsync has no `--delete`, so server-only files can never be removed by a deploy. |
 | `includes/.env.php` | Production secrets — exists **only** on the server, never in Git |
 
 These are enforced in **two independent places**:
@@ -289,7 +290,9 @@ rsync -azc --dry-run --itemize-changes \
 ```
 
 Expected: **zero** lines mentioning `data/`, `logs/`,
-`assets/images/menu|hero|gallery/`, `.git/`, `.github/`.
+`assets/images/menu|gallery/`, `.git/`, `.github/`. The `assets/images/hero/`
+directory is shared: static repo assets deploy, while admin-generated
+`<name>_<16hex>.webp` uploads are excluded (see `rsync-exclude.txt`).
 
 ---
 

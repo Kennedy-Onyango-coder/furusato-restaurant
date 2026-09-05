@@ -16,6 +16,27 @@ if [ -n "$bad_data" ]; then
   fail=1
 fi
 
+echo "== Hero upload protection (rsync-exclude.txt) =="
+# The hero/ directory is shared between repo-controlled static assets
+# (deployable) and admin-generated uploads (protected). Prove the precise
+# exclusion rule for admin-generated filenames is still present.
+if grep -q '/assets/images/hero/\*_\[0-9a-f\].*\.webp' .github/scripts/rsync-exclude.txt; then
+  echo "  ok  admin-upload exclusion rule present (convertToWebP <name>_<16hex>.webp)"
+else
+  echo "::error::rsync-exclude.txt no longer excludes admin-generated hero uploads (<name>_<16hex>.webp)."
+  fail=1
+fi
+
+echo "== Admin-upload-named files tracked in git under hero/ =="
+# convertToWebP() names uploads "<name>_<16hex>.webp". If such a file is ever
+# committed it is a production upload that leaked into git - flag it.
+bad_hero_uploads=$(git ls-files 'assets/images/hero/*' | grep -E '_[0-9a-f]{16}\.webp$' || true)
+if [ -n "$bad_hero_uploads" ]; then
+  echo "::error::Files matching the admin upload naming pattern are tracked in git (production uploads must never be committed):"
+  echo "$bad_hero_uploads"
+  fail=1
+fi
+
 echo "== Tracked files under logs/ =="
 git ls-files logs/
 bad_logs=$(git ls-files logs/ | grep -v -E 'logs/\.gitkeep$' || true)
