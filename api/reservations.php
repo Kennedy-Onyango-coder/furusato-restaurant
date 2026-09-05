@@ -90,7 +90,16 @@ function sendJsonResponse($data, $statusCode = 200)
     http_response_code($statusCode);
 
     header('Content-Type: application/json; charset=utf-8');
-    header('Cache-Control: no-store, no-cache, must-revalidate');
+
+    // Explicitly forbid caching at every layer (browser, LiteSpeed, and
+    // Hostinger hCDN). Without this, the hCDN caches API responses for
+    // 60s and fresh visitors receive another session's CSRF token,
+    // breaking the first reservation attempt. Also vary on cookies so
+    // session-bound responses can never be shared between visitors.
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    header('Vary: Cookie');
 
     if ($statusCode === 429) {
         $retryAfter = (int) ($data['data']['retry_after'] ?? 60);
