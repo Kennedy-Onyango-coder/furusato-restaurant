@@ -547,7 +547,29 @@
     addPhoneHint();
 
     csrfToken = getCsrfToken();
-    
+
+    // Token warm-up: when this page is served from the LiteSpeed
+    // page cache, the embedded CSRF token may belong to a previous
+    // session (the cache does not start a PHP session), which makes
+    // the FIRST reservation submission fail. Fetch a session-bound
+    // token from the always-uncached API endpoint instead so the
+    // first attempt succeeds. If the warm-up fails we simply keep
+    // the page-embedded token and the existing 403 recovery path
+    // still works.
+    try {
+      fetch(API_BASE + "?action=csrf", {
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" }
+      })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (data && data.success && data.csrf_token) {
+            updateCsrfToken(data.csrf_token);
+          }
+        })
+        .catch(function() { /* keep the page-embedded token */ });
+    } catch (e) { /* non-fatal */ }
+
     var storedRateLimit = localStorage.getItem('furusato_rate_limit_until');
     if (storedRateLimit && parseInt(storedRateLimit) > Date.now()) {
       var remainingSeconds = Math.ceil((parseInt(storedRateLimit) - Date.now()) / 1000);

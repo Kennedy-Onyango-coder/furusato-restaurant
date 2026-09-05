@@ -862,6 +862,32 @@ try {
     }
 
     // ============================================================
+    // CSRF warm-up (uncached initialization endpoint)
+    // ------------------------------------------------------------
+    // LiteSpeed page caching can serve contact.php from cache
+    // without starting a PHP session, so the CSRF token embedded in
+    // the cached HTML belongs to a foreign/previous session. The
+    // first reservation POST then fails CSRF validation and the
+    // customer sees an error. This lightweight read-only GET gives
+    // the visitor their own session + fresh token (the response is
+    // always sent no-store) so the FIRST submission succeeds.
+    // ============================================================
+
+    if (
+        $method === 'GET' &&
+        ($_GET['action'] ?? '') === 'csrf'
+    ) {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+
+        sendJsonResponse([
+            'success'    => true,
+            'csrf_token' => $_SESSION['csrf_token']
+        ]);
+    }
+
+    // ============================================================
     // GET - Admin listing or verified single reservation lookup
     // ============================================================
 

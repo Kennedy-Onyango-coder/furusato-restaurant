@@ -293,9 +293,13 @@ RewriteRule ^(.*)$ $1 [R=200,L]
     CacheEnable public /
     CacheEnable public admin/
     
-    # Don't cache admin pages and API
+    # Don't cache admin pages, API, or the reservation page.
+    # contact.php must always run PHP (session + CSRF token are
+    # visitor-specific) — a cached copy serves a foreign session's
+    # CSRF token and breaks the first reservation attempt.
     RewriteCond %{REQUEST_URI} /admin/ [NC,OR]
     RewriteCond %{REQUEST_URI} login\.php [NC,OR]
+    RewriteCond %{REQUEST_URI} contact\.php [NC,OR]
     RewriteCond %{REQUEST_URI} /api/ [NC]
     RewriteRule .* - [E=Cache-Control:no-cache]
     
